@@ -5,7 +5,7 @@
 #' @export
 hmm_map_reconstruction <- function(ploidy, n.mrk, n.ind, haplo, emit = NULL,
                                    rf_vec, verbose = TRUE, use_H0 = FALSE,
-                                   highprec = FALSE, tol = 10e-4) {
+                                  tol = 10e-4) {
   ## Checking capabilities
   if (verbose && !capabilities("long.double") && highprec){
     cat("This function uses high precision calculations, but your system's architecture doesn't support long double allocation ('capabilities('long.double') = FALSE'). Running in low precision mode.\n")
@@ -22,9 +22,8 @@ hmm_map_reconstruction <- function(ploidy, n.mrk, n.ind, haplo, emit = NULL,
       emit[[i]] <- tempemit
     }
   }
-  if(highprec){
     res.temp <-
-      .Call("est_haplotype_map_highprec",
+      .Call("est_hmm_map",
             ploidy,
             n.mrk,
             n.ind,
@@ -36,20 +35,4 @@ hmm_map_reconstruction <- function(ploidy, n.mrk, n.ind, haplo, emit = NULL,
             use_H0,
             PACKAGE = "mappoly2")
     return(res.temp)
-
-  } else {
-    res.temp <-
-      .Call("est_haplotype_map",
-            ploidy,
-            n.mrk,
-            n.ind,
-            haplo,
-            emit,
-            rf_vec,
-            verbose,
-            tol,
-            use_H0,
-            PACKAGE = "mappoly2")
-    return(res.temp)
-  }
 }

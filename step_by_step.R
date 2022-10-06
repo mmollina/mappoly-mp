@@ -13,8 +13,6 @@ h1 <- simulate_multiallelic_homology_group(ploidy = ploidy1,
                                            alleles = 0:1,
                                            lambda = 1,
                                            shuffle.homolog = TRUE)
-#h1[] <- 0
-#h1[,2][] <- 1
 op <- par(mfrow = c(1,2))
 image(h1, axes = FALSE, xlab = "Markers", ylab = "homologs")
 abline(h = seq(-1/(2*ploidy1 - 2), 1 + 1/(2*ploidy1- 2),
@@ -28,8 +26,6 @@ h2 <- simulate_multiallelic_homology_group(ploidy = ploidy2,
                                            alleles = 0:1,
                                            lambda = 1,
                                            shuffle.homolog = TRUE)
-#h2[] <- 0
-#h2[,2][] <- 1
 image(h2, axes = FALSE, xlab = "Markers", ylab = "homologs")
 abline(h = seq(-1/(2*ploidy2 - 2), 1 + 1/(2*ploidy2 - 2),
                length.out = ploidy2+1),
@@ -268,6 +264,9 @@ mp.multiallelic <- round(cumsum(mappoly::imf_h(c(0, restemp[[2]]))), 2)
 
 
 #### Firts bias assessment ####
+require(mappoly2)
+require(mappoly)
+require(tidyverse)
 source("sand/myfunc.R")
 ploidy <- ploidy1 <- 4
 ploidy2 <- 4
@@ -280,7 +279,7 @@ cm.map <- seq(0, 5, length.out = n.mrk)
 dev.off()
 plot(0, xlim = c(0,5), ylim = c(0,5), type = "n")
 abline(a = 0, 1, col = 2, lwd = 3)
-for(ble in 1:100){
+for(ble in 1:4){
   cat("simulation: ", ble, "\n")
   z<-myfunc()
   a <- lm(z[[2]]~z[[1]])

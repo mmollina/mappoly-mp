@@ -13,7 +13,6 @@ hmm_map_reconstruction(
   rf_vec,
   verbose = TRUE,
   use_H0 = FALSE,
-  highprec = FALSE,
   tol = 0.001
 )
 }
