@@ -1,0 +1,39 @@
+Package: mappoly2
+Type: Package
+Title: Genetic mapping in interconnected families with mixed ploidy levels and multiallelic information
+Version: 0.0.1
+Authors@R: c(person(given = "Marcelo",
+                    family = "Mollinari",
+                    role = c("aut", "cre"),
+                    email = "mmollin@ncsu.edu",
+                    comment = c(ORCID="0000-0002-7001-8498")),
+            person(given = "Gabriel",
+                    family = "Gesteira",
+                    role = "aut",
+                    email = "gabrielgesteira@usp.br",
+                    comment = c(ORCID="0000-0002-4106-7346")),
+            person(given = "Zhao-Bang",
+                    family = "Zeng",
+                    role = "ctb",
+                    comment = c(ORCID="0000-0002-3115-1149")))
+Maintainer: Marcelo Mollinari <mmollin@ncsu.edu>
+Description: Genetic mapping in interconnected families with 
+             mixed ploidy levels and multiallelic information.
+License: GPL-3
+LazyData: TRUE
+LazyDataCompression: xz
+Depends:
+    R (>= 3.5.0)
+Imports:
+    Rcpp (>= 0.12.6),
+    ggplot2,
+    stringr,
+    reshape2,
+    tibble,
+    plyr,
+    dplyr,
+    gtools
+LinkingTo: Rcpp
+RoxygenNote: 7.2.0
+SystemRequirements: C++11
+Encoding: UTF-8
