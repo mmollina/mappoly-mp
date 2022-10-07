@@ -103,8 +103,8 @@ for(i in mrks)
                               filter(ind == j) %>%
                               select("st.p1", "st.p2"))
     emit.temp[[j]] <- exp(as.matrix(st.temp %>%
-                              filter(ind == j) %>%
-                              select("emit")))
+                                      filter(ind == j) %>%
+                                      select("emit")))
   }
   h[[i]] <- htemp
   emit[[i]] <- emit.temp
@@ -148,14 +148,14 @@ Y1
 
 #### MAPpoly2 - same C++ code as mappoly####
 restemp <- hmm_map_reconstruction(ploidy = ploidy,
-                                   n.mrk = length(h),
-                                   n.ind = length(h[[1]]),
-                                   haplo = h,
-                                   emit = emit,
-                                   rf_vec = rep(0.01, length(h)-1),
-                                   verbose = FALSE,
-                                   use_H0 = FALSE,
-                                   tol = 10e-5)
+                                  n.mrk = length(h),
+                                  n.ind = length(h[[1]]),
+                                  haplo = h,
+                                  emit = emit,
+                                  rf_vec = rep(0.01, length(h)-1),
+                                  verbose = FALSE,
+                                  use_H0 = FALSE,
+                                  tol = 10e-5)
 mp2 <- round(cumsum(mappoly::imf_h(c(0, restemp[[2]]))), 2)
 #### Comparing 2####
 Y2 <- rbind(cm.map[info.mrk],mp,mp.hap,mp.hap.e, mp2)
@@ -273,7 +273,7 @@ require(foreach)
 source("sand/myfunc.R")
 ploidy <- ploidy1 <- 4
 ploidy2 <- 4
-n.mrk <- 15
+n.mrk <- 30
 n.ind <- 200
 cm.map <- seq(0, 5, length.out = n.mrk)
 names(cm.map) <- paste0("M", 1:n.mrk)
@@ -285,47 +285,56 @@ parallel::clusterEvalQ(cl, require(mappoly2))
 parallel::clusterEvalQ(cl, require(stringr))
 parallel::clusterEvalQ(cl, require(mappoly))
 doParallel::registerDoParallel(cl = cl)
-n.sim <- 16
+n.sim <- 1000
 #### completely informative ####
-X1 <- foreach(i = 1:n.sim) %dopar% {
-  myfunc(ploidy1 = ploidy1,
-         ploidy2 = ploidy2,
-         al1 = 1:4,
-         al2 = 5:8,
-         n.ind = n.ind,
-         n.mrk = n.mrk,
-         cm.map = cm.map)
-}
+system.time(
+  X1 <- foreach(i = 1:n.sim) %dopar% {
+    myfunc(ploidy1 = ploidy1,
+           ploidy2 = ploidy2,
+           al1 = 1:4,
+           al2 = 5:8,
+           n.ind = n.ind,
+           n.mrk = n.mrk,
+           cm.map = cm.map)
+  }
+)
 #### partially informative 1####
-X2 <- foreach(i = 1:n.sim) %dopar% {
-  myfunc(ploidy1 = ploidy1,
-         ploidy2 = ploidy2,
-         al1 = 1:4,
-         al2 = 1:4,
-         n.ind = n.ind,
-         n.mrk = n.mrk,
-         cm.map = cm.map)
-}
+system.time(
+  X2 <- foreach(i = 1:n.sim) %dopar% {
+    myfunc(ploidy1 = ploidy1,
+           ploidy2 = ploidy2,
+           al1 = 1:4,
+           al2 = 1:4,
+           n.ind = n.ind,
+           n.mrk = n.mrk,
+           cm.map = cm.map)
+  }
+)
 #### partially informative 2####
-X3 <- foreach(i = 1:n.sim) %dopar% {
-  myfunc(ploidy1 = ploidy1,
-         ploidy2 = ploidy2,
-         al1 = 1:2,
-         al2 = 3:4,
-         n.ind = n.ind,
-         n.mrk = n.mrk,
-         cm.map = cm.map)
-}
+system.time(
+  X3 <- foreach(i = 1:n.sim) %dopar% {
+    myfunc(ploidy1 = ploidy1,
+           ploidy2 = ploidy2,
+           al1 = 1:2,
+           al2 = 3:4,
+           n.ind = n.ind,
+           n.mrk = n.mrk,
+           cm.map = cm.map)
+  }
+)
+
 #### biallelic ####
-X4 <- foreach(i = 1:n.sim) %dopar% {
-  myfunc(ploidy1 = ploidy1,
-         ploidy2 = ploidy2,
-         al1 = 1:2,
-         al2 = 1:2,
-         n.ind = n.ind,
-         n.mrk = n.mrk,
-         cm.map = cm.map)
-}
+system.time(
+  X4 <- foreach(i = 1:n.sim) %dopar% {
+    myfunc(ploidy1 = ploidy1,
+           ploidy2 = ploidy2,
+           al1 = 1:2,
+           al2 = 1:2,
+           n.ind = n.ind,
+           n.mrk = n.mrk,
+           cm.map = cm.map)
+  }
+)
 
 #### Stop cluster ####
 parallel::stopCluster(cl = cl)
@@ -342,17 +351,9 @@ df4 <- data.frame(df4, sim = "biallelic")
 require(ggplot2)
 DF <- rbind(df1, df2, df3, df4)
 DF$sim.pos <- cm.map[DF$mrk]
-
+save.image("bias_study.rda")
 ggplot(DF, aes(x = sim.pos, y = pos, color = sim) ) +
   geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
+  geom_smooth(method = "lm", se = TRUE) +
   facet_wrap(.~sim) + geom_abline(intercept = 0, slope = 1)
-
-
-
-
-
-
-
-
-
+save.image("bias_study.rda")
