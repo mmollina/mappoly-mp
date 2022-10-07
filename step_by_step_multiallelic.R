@@ -353,7 +353,7 @@ DF <- rbind(df1, df2, df3, df4)
 DF$sim.pos <- cm.map[DF$mrk]
 save.image("bias_study.rda")
 ggplot(DF, aes(x = sim.pos, y = pos, color = sim) ) +
-  geom_point() +
-  geom_smooth(method = "lm", se = TRUE) +
-  facet_wrap(.~sim) + geom_abline(intercept = 0, slope = 1)
+  geom_point(alpha = .2) +
+  geom_smooth(method = "lm", se = TRUE, color = "lightblue") +
+  facet_wrap(.~sim) + geom_abline(intercept = 0, slope = 1, linetype = "dashed")
 save.image("bias_study.rda")
