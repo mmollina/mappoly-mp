@@ -215,7 +215,8 @@ simulate_gamete <- function(homology.group,
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @export
 #'
-simulate_cross <- function(h1,
+simulate_cross <- function(n.ind,
+                           h1,
                            h2,
                            cm.map,
                            prob1 = NULL,
@@ -226,8 +227,9 @@ simulate_cross <- function(h1,
   data.P1 <- simulate_gamete(h1, n.ind, cm.map, prob1)
   ##Parent 2
   data.P2  <- simulate_gamete(h2, n.ind, cm.map, prob2)
-  rf.calc <- (data.P1$c.o.count + data.P2$c.o.count)/(n.ind*(ploidy1 + ploidy2)/2)
-  offspring <- array(NA, dim = c(n.mrk, (ploidy1+ploidy2)/2, n.ind))
+  rf.calc <- (data.P1$c.o.count + data.P2$c.o.count)/(n.ind*(ncol(h1)+ncol(h2))/2)
+  offspring <- array(NA, dim = c(nrow(h1), (ncol(h1)+ncol(h2))/2, n.ind),
+                     dimnames = list(rownames(h1), NULL, paste0("Ind_", 1:n.ind)))
   for(i in 1:n.ind)
     offspring[,,i] <- cbind(data.P1$gamete[,,i], data.P2$gamete[,,i])
   list(offspring = offspring,

@@ -64,7 +64,9 @@ S <- cbind(ploidy1, ploidy2, 1, expand.grid(0:(ngam1-1), 0:(ngam2-1))[,2:1],
            0:((ngam1*ngam2)-1), 0)
 colnames(S) <- c("pl1", "pl2", "pl.id", "st.p1", "st.p2", "st.all", "emit")
 Y <- NULL
-info.mrk <- as.numeric(str_remove_all(map$info$mrk.names, "M"))
+b1 <- apply(f1$ph1, 1, function(x) length(unique(x)))
+b2 <- apply(f1$ph2, 1, function(x) length(unique(x)))
+info.mrk <- as.numeric(str_remove_all(names(which(!(b1==1 & b2==1))), "M"))
 for(i in 1:dim(f1$offspring)[3]){
   for(j in info.mrk){
     A1 <- combn(as.numeric(f1$ph1[j,]), ploidy1/2)
@@ -267,25 +269,84 @@ mp.multiallelic <- round(cumsum(mappoly::imf_h(c(0, restemp[[2]]))), 2)
 require(mappoly2)
 require(mappoly)
 require(tidyverse)
+require(foreach)
 source("sand/myfunc.R")
 ploidy <- ploidy1 <- 4
 ploidy2 <- 4
-n.mrk <- 10
+n.mrk <- 15
 n.ind <- 200
-al1 <- 1:4
-al2 <- 5:8
 cm.map <- seq(0, 5, length.out = n.mrk)
+names(cm.map) <- paste0("M", 1:n.mrk)
 
-dev.off()
-plot(0, xlim = c(0,5), ylim = c(0,5), type = "n")
-abline(a = 0, 1, col = 2, lwd = 3)
-for(ble in 1:4){
-  cat("simulation: ", ble, "\n")
-  z<-myfunc()
-  a <- lm(z[[2]]~z[[1]])
-  points(z[[2]]~z[[1]], cex = .5, col = "lightgray")
-  abline(a, lwd = .5, col = 4)
+#### Parallel ####
+n.cores <- parallel::detectCores()
+cl <- parallel::makeCluster(n.cores)
+parallel::clusterEvalQ(cl, require(mappoly2))
+parallel::clusterEvalQ(cl, require(stringr))
+parallel::clusterEvalQ(cl, require(mappoly))
+doParallel::registerDoParallel(cl = cl)
+n.sim <- 16
+#### completely informative ####
+X1 <- foreach(i = 1:n.sim) %dopar% {
+  myfunc(ploidy1 = ploidy1,
+         ploidy2 = ploidy2,
+         al1 = 1:4,
+         al2 = 5:8,
+         n.ind = n.ind,
+         n.mrk = n.mrk,
+         cm.map = cm.map)
 }
+#### partially informative 1####
+X2 <- foreach(i = 1:n.sim) %dopar% {
+  myfunc(ploidy1 = ploidy1,
+         ploidy2 = ploidy2,
+         al1 = 1:4,
+         al2 = 1:4,
+         n.ind = n.ind,
+         n.mrk = n.mrk,
+         cm.map = cm.map)
+}
+#### partially informative 2####
+X3 <- foreach(i = 1:n.sim) %dopar% {
+  myfunc(ploidy1 = ploidy1,
+         ploidy2 = ploidy2,
+         al1 = 1:2,
+         al2 = 3:4,
+         n.ind = n.ind,
+         n.mrk = n.mrk,
+         cm.map = cm.map)
+}
+#### biallelic ####
+X4 <- foreach(i = 1:n.sim) %dopar% {
+  myfunc(ploidy1 = ploidy1,
+         ploidy2 = ploidy2,
+         al1 = 1:2,
+         al2 = 1:2,
+         n.ind = n.ind,
+         n.mrk = n.mrk,
+         cm.map = cm.map)
+}
+
+#### Stop cluster ####
+parallel::stopCluster(cl = cl)
+
+#### Graphics ####
+df1 <- reshape2::melt(lapply(X1, function(x) tibble(mrk = names(x), pos = x)), id.vars = c("pos", "mrk"))
+df1 <- data.frame(df1, sim = "comp_inf")
+df2 <- reshape2::melt(lapply(X2, function(x) tibble(mrk = names(x), pos = x)), id.vars = c("pos", "mrk"))
+df2 <- data.frame(df2, sim = "partial_1")
+df3 <- reshape2::melt(lapply(X3, function(x) tibble(mrk = names(x), pos = x)), id.vars = c("pos", "mrk"))
+df3 <- data.frame(df3, sim = "partial_2")
+df4 <- reshape2::melt(lapply(X4, function(x) tibble(mrk = names(x), pos = x)), id.vars = c("pos", "mrk"))
+df4 <- data.frame(df4, sim = "biallelic")
+require(ggplot2)
+DF <- rbind(df1, df2, df3, df4)
+DF$sim.pos <- cm.map[DF$mrk]
+
+ggplot(DF, aes(x = sim.pos, y = pos, color = sim) ) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(.~sim) + geom_abline(intercept = 0, slope = 1)
 
 
 

@@ -4,7 +4,7 @@
 \alias{simulate_cross}
 \title{Simulate a biparental cross}
 \usage{
-simulate_cross(h1, h2, cm.map, prob1 = NULL, prob2 = NULL, seed = NULL)
+simulate_cross(n.ind, h1, h2, cm.map, prob1 = NULL, prob2 = NULL, seed = NULL)
 }
 \arguments{
 \item{void}{internal function to be documented}
