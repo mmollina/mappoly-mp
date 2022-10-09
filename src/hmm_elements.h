@@ -38,47 +38,22 @@
  Last update: Oct 06, 2022
  */
 
-double prob_k1_given_k_l_m(int m, int l, double rf);
-std::vector<std::vector<double> > rec_num(int m);
-std::vector<std::vector<double> > transition(int m, double rf);
-std::vector<std::vector<int> > index_func(int m,
-                                          std::vector<int>& p,
-                                          std::vector<int>& q);
-std::vector<double> forward(int m,
-                            std::vector<double>& fk,
-                            std::vector<int>& ik,
-                            std::vector<int>& ik1,
-                            std::vector<std::vector<double> >& T);
-std::vector<double> backward(int m,
-                             std::vector<double>& fk1,
-                             std::vector<int>& ik,
-                             std::vector<int>& ik1,
-                             std::vector<std::vector<double> >& T);
+double prob_k1_given_k_l_m(int ploidy, int l, double rf);
 
-std::vector<double> forward_emit(int m,
-                                 std::vector<double>& fk,
+std::vector<std::vector<double> > rec_num(int ploidy);
+
+std::vector<std::vector<double> > transition(int ploidy, double rf);
+
+std::vector<double> forward_emit(std::vector<double>& fk,
                                  std::vector<int>& ik,
                                  std::vector<int>& ik1,
                                  std::vector<double>& emit,
-                                 std::vector<std::vector<double> >& T);
+                                 std::vector<std::vector<double> >& T1,
+                                 std::vector<std::vector<double> >& T2);
 
-std::vector<double> backward_emit(int m,
-                                  std::vector<double>& fk1,
+std::vector<double> backward_emit(std::vector<double>& fk1,
                                   std::vector<int>& ik,
                                   std::vector<int>& ik1,
                                   std::vector<double>& emit,
-                                  std::vector<std::vector<double> >& T);
-
-std::vector<double> forward_emit_one_parent(int m,
-                                            std::vector<double>& fk,
-                                            std::vector<int>& ik,
-                                            std::vector<int>& ik1,
-                                            std::vector<double>& emit,
-                                            std::vector<std::vector<double> >& T);
-
-std::vector<double> backward_emit_one_parent(int m,
-                                             std::vector<double>& fk1,
-                                             std::vector<int>& ik,
-                                             std::vector<int>& ik1,
-                                             std::vector<double>& emit,
-                                             std::vector<std::vector<double> >& T);
+                                  std::vector<std::vector<double> >& T1,
+                                  std::vector<std::vector<double> >& T2);

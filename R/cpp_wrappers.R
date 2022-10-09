@@ -3,7 +3,7 @@
 #' @param void internal function to be documented
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @export
-hmm_map_reconstruction <- function(ploidy, n.mrk, n.ind, haplo, emit = NULL,
+hmm_map_reconstruction <- function(ploidy1, ploidy2, n.mrk, n.ind, haplo, emit = NULL,
                                    rf_vec, verbose = TRUE, use_H0 = FALSE,
                                   tol = 10e-4) {
   ## Checking capabilities
@@ -22,9 +22,13 @@ hmm_map_reconstruction <- function(ploidy, n.mrk, n.ind, haplo, emit = NULL,
       emit[[i]] <- tempemit
     }
   }
+  ploidy1_id <- ploidy1/2-1
+  ploidy2_id <- ploidy2/2-1
     res.temp <-
       .Call("est_hmm_map",
-            ploidy,
+            ploidy1_id,
+            ploidy2_id,
+            max(c(ploidy1_id, ploidy2_id)),
             n.mrk,
             n.ind,
             haplo,

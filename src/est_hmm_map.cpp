@@ -51,7 +51,9 @@
 using namespace std;
 using namespace Rcpp;
 
-RcppExport SEXP est_hmm_map(SEXP ploidyR,
+RcppExport SEXP est_hmm_map(SEXP ploidy1_idR,
+                            SEXP ploidy2_idR,
+                            SEXP max_ploidy_idR,
                             SEXP n_marR,
                             SEXP n_indR,
                             SEXP haploR,
@@ -62,7 +64,9 @@ RcppExport SEXP est_hmm_map(SEXP ploidyR,
                             SEXP ret_H0R)
 {
   //convert input to C++ types
-  int m = Rcpp::as<int>(ploidyR);
+  Rcpp::NumericVector p1(ploidy1_idR);
+  Rcpp::NumericVector p2(ploidy2_idR);
+  int max_ploidy_id = Rcpp::as<int>(max_ploidy_idR);
   int n_mar = Rcpp::as<int>(n_marR);
   int n_ind = Rcpp::as<int>(n_indR);
   Rcpp::List haplo(haploR);
@@ -71,7 +75,7 @@ RcppExport SEXP est_hmm_map(SEXP ploidyR,
   int verbose = Rcpp::as<int>(verboseR);
   int ret_H0 = Rcpp::as<int>(ret_H0R);
   double tol = Rcpp::as<double>(tolR);
-
+  std::vector<int> pl{2,4,6};
   //Initializing some variables
   int k, k1,  maxit = 1000, flag=0;
   double s, loglike=0.0, nr=0.0, temp=0.0;
@@ -79,12 +83,6 @@ RcppExport SEXP est_hmm_map(SEXP ploidyR,
   std::vector<double> term(n_ind);
   std::fill(term.begin(), term.end(), 0.0);
 
-  if(verbose)
-  {
-    Rcpp::Rcout << "\tPloidy level: " << m << "\n" ;
-    Rcpp::Rcout << "\tNumber of markers: " << n_mar << "\n" ;
-    Rcpp::Rcout << "\tNumber of individuals: " << n_ind << "\n" ;
-  }
   //Initializing v: states hmm should visit for each marker
   //Initializing e: emission probabilities associated to the states hmm should visit for each marker
   std::vector<std::vector<std::vector<int> > > v;
@@ -121,8 +119,9 @@ RcppExport SEXP est_hmm_map(SEXP ploidyR,
   }
 
   //Initializing recombination number matrix
-  std::vector< std::vector<double> > R;
-  R = rec_num(m);
+  std::vector< std::vector< std::vector<double> > > R;
+  for(int j=0; j <= max_ploidy_id; j++)
+    R.push_back(rec_num(pl[j]));
 
   //begin EM algorithm
   for(int it=0; it<maxit; it++)
@@ -134,10 +133,15 @@ RcppExport SEXP est_hmm_map(SEXP ploidyR,
       rf[j] = 0.0;
     }
     //Initializing transition matrices
-    std::vector< std::vector< std::vector<double> > > T;
-    for(int i=0; i < n_mar-1; i++)
+    std::vector< std::vector< std::vector< std::vector<double> > > >T;
+    for(int j=0; j <= max_ploidy_id; j++)
     {
-      T.push_back(transition(m, rf_cur[i]));
+      std::vector< std::vector< std::vector<double> > > Ttemp;
+      for(int i=0; i < n_mar-1; i++)
+      {
+        Ttemp.push_back(transition(pl[j], rf_cur[i]));
+      }
+      T.push_back(Ttemp);
     }
     //Loop over all individuals
     for(int ind=0; ind < n_ind; ind++)
@@ -152,13 +156,13 @@ RcppExport SEXP est_hmm_map(SEXP ploidyR,
       for(k=1,k1=n_mar-2; k < n_mar; k++, k1--)
       {
         std::vector<double> temp4 (v[k][ind].size()/2);
-        temp4 = forward_emit(m, alpha[ind][k-1], v[k-1][ind], v[k][ind], e[k][ind], T[k-1]);
+        temp4 = forward_emit(alpha[ind][k-1], v[k-1][ind], v[k][ind], e[k][ind], T[p1[ind]][k-1], T[p2[ind]][k-1]);
         for(int j=0; (unsigned)j < temp4.size(); j++)
         {
           alpha[ind][k][j]=temp4[j];
         }
         std::vector<double> temp5 (v[k1][ind].size()/2);
-        temp5=backward_emit(m, beta[ind][k1+1], v[k1][ind], v[k1+1][ind], e[k1+1][ind], T[k1]);
+        temp5=backward_emit(beta[ind][k1+1], v[k1][ind], v[k1+1][ind], e[k1+1][ind], T[p1[ind]][k1], T[p2[ind]][k1]);
         for(int j=0; (unsigned)j < temp5.size(); j++)
         {
           beta[ind][k1][j]=temp5[j];
@@ -178,8 +182,8 @@ RcppExport SEXP est_hmm_map(SEXP ploidyR,
             for(int j = 0; j < ngenj; j++)
             {
               gamma[i][j] = alpha[ind][k][i] * beta[ind][k+1][j] *
-                T[k][v[k][ind][i]][v[k+1][ind][j]] *
-                T[k][v[k][ind][i+ngeni]][v[k+1][ind][j+ngenj]];
+                T[p1[ind]][k][v[k][ind][i]][v[k+1][ind][j]] *
+                T[p2[ind]][k][v[k][ind][i+ngeni]][v[k+1][ind][j+ngenj]];
               if(i==0 && j==0) s = gamma[i][j];
               else s += gamma[i][j];
             }
@@ -188,8 +192,8 @@ RcppExport SEXP est_hmm_map(SEXP ploidyR,
           {
             for(int j=0; j < ngenj; j++)
             {
-              nr=R[v[k][ind][i]][v[k+1][ind][j]] +
-                R[v[k][ind][i+ngeni]][v[k+1][ind][j+ngenj]];
+              nr=R[p1[ind]][v[k][ind][i]][v[k+1][ind][j]] +
+                R[p2[ind]][v[k][ind][i+ngeni]][v[k+1][ind][j+ngenj]];
               if(s > 0) // Verify theoretical implications of this condition
                 rf[k] +=  nr * gamma[i][j]/s;
             }
