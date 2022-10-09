@@ -243,9 +243,9 @@ simulate_cross <- function(n.ind,
 #' @param void internal function to be documented
 #' @examples
 #' h.c <- simulate_connected(ploidy = c(4,2,6),
-#'                            n.mrk = c(10, 15, 10),
-#'                            alleles = list(c(0:3), c(3:4), c(3:6)),
-#'                            map.length = 10)
+#'                           n.mrk = c(10, 15, 10),
+#'                           alleles = list(c(0:3), c(3:4), c(3:6)),
+#'                           map.length = 10)
 #'
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @importFrom stringr str_split str_split_fixed
@@ -253,10 +253,10 @@ simulate_cross <- function(n.ind,
 #' @importFrom plyr join_all
 #' @export
 simulate_connected <- function(ploidy,
-                                n.mrk,
-                                alleles,
-                                map.length,
-                                lambda = sapply(alleles, median)){
+                               n.mrk,
+                               alleles,
+                               map.length,
+                               lambda = sapply(alleles, median)){
   shared <- NULL
   for(i in length(ploidy):1){
     v <- combn(1:length(ploidy), i)
@@ -273,10 +273,6 @@ simulate_connected <- function(ploidy,
     for(j in 1:length(ploidy)){
       if(stringr::str_detect(shared[i], as.character(j))){
         h.t <- simulate_multiallelic_homology_group(ploidy[j], length(map), alleles[[j]], lambda[j])
-        if(j == 1)
-           h.t <- matrix(c(1,1,1,1,1,0,0,0,0,0,0,0), ncol = 4)
-        else
-           h.t[] <- 0
         colnames(h.t) <- paste0("P",j,"_", 1:ploidy[j])
         h.t <- cbind(h.t, map)
         h[[j]] <- rbind(h[[j]], h.t)
@@ -288,6 +284,9 @@ simulate_connected <- function(ploidy,
   res <- join_all(res, by='map', type = 'full')
   res <- res[,sort(colnames(res))]
   res <- res[order(res$map),]
+  res$mrks <- paste0("M", 1:nrow(res))
+  res$map<-res$map-min(res$map)
+  rownames(res) <- NULL
   res
 }
 
@@ -301,9 +300,9 @@ simulate_connected <- function(ploidy,
 #' D <- simulate_multiple_crosses(ploidy = p, #four parents
 #'                                cross.mat = cm,
 #'                                n.ind = c(60, 60, 60, 60, 60, 60), #per cross
-#'                                n.mrk= c(100,100,100,100), # per parent
-#'                                alleles = list(c(0:3), c(4:5), c(6:11), c(12:15)),
-#'                                map.length = 100)
+#'                                n.mrk= c(20,15,15,25), # per parent
+#'                                alleles = list(c(1:3), c(4:5), c(6:11), c(12:15)),
+#'                                map.length = 10)
 #' D
 #' names(D)
 #' names(D$dat)
@@ -326,7 +325,9 @@ simulate_multiple_crosses <- function(ploidy,
                            map.length = map.length,
                            alleles = alleles,
                            lambda = lambda)
-  rownames(h) <- NULL
+   ############################
+   ####### START HERE #########
+   ############################
   G <- vector("list", nrow(cross.mat))
   for(i in 1:nrow(cross.mat)){
     R <- array(NA, dim = c(nrow(h), mean(ploidy[cross.mat[i,]]), n.ind[i]),
@@ -337,13 +338,7 @@ simulate_multiple_crosses <- function(ploidy,
     Pab <- which(Pa & Pb)
     Ha <- str_detect(str_split_fixed(colnames(h), "_", 2)[,1], pid[1])
     Hb <- str_detect(str_split_fixed(colnames(h), "_", 2)[,1], pid[2])
-    A <- simulate_cross(ploidy1 = ploidy[cross.mat[i,1]],
-                        ploidy2 = ploidy[cross.mat[i,2]],
-                        n.ind = n.ind[i],
-                        n.mrk = length(Pab),
-                        h1 = h[Pab,Ha],
-                        h2 = h[Pab,Hb],
-                        cm.map  = h[Pab,"map"])$offspring
+    A <- simulate_cross(n.ind = n.ind[i],  h1 = h[Pab,Ha], h2 = h[Pab,Hb], h[Pab,"map"])$offspring
     id <- apply(A, 1, function(x) length(unique(x)) > 1)
     dimnames(A) <- list(h[Pab,"mrks"], NULL, paste0("Ind_",paste0(cross.mat[i,],collapse="x"), "_", 1:n.ind[i]))
     for(j in 1:n.ind[i])
