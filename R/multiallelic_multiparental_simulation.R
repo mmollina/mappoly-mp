@@ -256,7 +256,8 @@ simulate_connected <- function(ploidy,
                                n.mrk,
                                alleles,
                                map.length,
-                               lambda = sapply(alleles, median)){
+                               lambda = sapply(alleles, median),
+                               shuffle.homolog = TRUE){
   shared <- NULL
   for(i in length(ploidy):1){
     v <- combn(1:length(ploidy), i)
@@ -272,7 +273,8 @@ simulate_connected <- function(ploidy,
     names(map) <- paste0(shared[i],"_", 1:length(map))
     for(j in 1:length(ploidy)){
       if(stringr::str_detect(shared[i], as.character(j))){
-        h.t <- simulate_multiallelic_homology_group(ploidy[j], length(map), alleles[[j]], lambda[j])
+        h.t <- simulate_multiallelic_homology_group(ploidy[j], length(map), alleles[[j]],
+                                                    lambda[j], shuffle.homolog = shuffle.homolog)
         colnames(h.t) <- paste0("P",j,"_", 1:ploidy[j])
         h.t <- cbind(h.t, map)
         h[[j]] <- rbind(h[[j]], h.t)
@@ -294,72 +296,81 @@ simulate_connected <- function(ploidy,
 #'
 #' @param void internal function to be documented
 #' @examples
-#' p <- c(4, 2, 6, 4)
-#' names(p) <- c("P1", "P2", "P3", "P4")
-#' cm <- matrix(c("P1","P2","P1","P3","P2","P3","P1","P1","P2","P4","P3","P4"), ncol = 2, byrow = T)
-#' D <- simulate_multiple_crosses(ploidy = p, #four parents
-#'                                cross.mat = cm,
-#'                                n.ind = c(60, 60, 60, 60, 60, 60), #per cross
-#'                                n.mrk= c(20,15,15,25), # per parent
-#'                                alleles = list(c(1:3), c(4:5), c(6:11), c(12:15)),
-#'                                map.length = 10)
-#' D
-#' names(D)
-#' names(D$dat)
-#' D$dat$`1x2`
-#' dimnames(D$dat$`1x2`)
+#' ploidy.vec <- c(4, 2, 6, 4) #four parents
+#' names(ploidy.vec) <- c("P1", "P2", "P3", "P4")
+#' cross.mat <- matrix(c("P1","P2",
+#'                       "P1","P3",
+#'                       "P2","P3",
+#'                       "P1","P1",
+#'                       "P2","P4",
+#'                       "P3","P4"), ncol = 2, byrow = T)
+#' n.ind <- c(60, 60, 60, 60, 60, 60) #per cross
+#' n.mrk <- c(20,15,15,25) #per parent
+#' alleles <- list(P1 = c(1:3),
+#'                 P2 = c(4:5),
+#'                 P3 = c(6:11),
+#'                 P4 = c(12:15))
+#' map.length <- 10 #in centimorgans
+#' sim.cross <- simulate_multiple_crosses(ploidy.vec,
+#'                                        cross.mat,
+#'                                        n.ind,
+#'                                        n.mrk,
+#'                                        alleles,
+#'                                        map.length)
+#' sim.cross
+#' names(sim.cross)
+#' names(sim.cross$dat)
+#' sim.cross$dat[1]
 #'
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
-#' @importFrom stringr str_detect str_remove_all
+#' @importFrom stringr str_detect
 #' @export
-simulate_multiple_crosses <- function(ploidy,
+simulate_multiple_crosses <- function(ploidy.vec,
                                       cross.mat,
                                       n.ind,
                                       n.mrk,
                                       alleles,
                                       map.length,
-                                      lambda = sapply(alleles, median))
+                                      lambda = sapply(alleles, median),
+                                      shuffle.homolog = TRUE)
 {
-  h <- simulate_connected(ploidy = ploidy,
-                           n.mrk = n.mrk,
-                           map.length = map.length,
-                           alleles = alleles,
-                           lambda = lambda)
-   ############################
-   ####### START HERE #########
-   ############################
-  G <- vector("list", nrow(cross.mat))
+  h <- simulate_connected(ploidy = ploidy.vec,
+                          n.mrk = n.mrk,
+                          map.length = map.length,
+                          alleles = alleles,
+                          lambda = lambda,
+                          shuffle.homolog = shuffle.homolog)
+  ind.names <- NULL
+  for(i in 1:nrow(cross.mat))
+    ind.names <- c(ind.names, paste0("Ind_",paste0(cross.mat[i,],collapse="x"), "_", 1:n.ind[i]))
+  G <- vector("list", sum(n.ind))
+  names(G) <- ind.names
+  P.info <- matrix(NA, sum(n.ind), 4, dimnames = list(ind.names, c("Par1", "Par2", "pl1", "pl2")))
+  P.info <- as.data.frame(P.info)
   for(i in 1:nrow(cross.mat)){
-    R <- array(NA, dim = c(nrow(h), mean(ploidy[cross.mat[i,]]), n.ind[i]),
-               dimnames = list(h$mrks,NULL, paste0("Ind_",paste0(cross.mat[i,],collapse="x"), "_", 1:n.ind[i])))
-    pid <- str_remove_all(cross.mat[i,], "P")
-    Pa <- str_detect(str_split_fixed(h$mrks, "_", 2)[,1], pid[1])
-    Pb <- str_detect(str_split_fixed(h$mrks, "_", 2)[,1], pid[2])
-    Pab <- which(Pa & Pb)
-    Ha <- str_detect(str_split_fixed(colnames(h), "_", 2)[,1], pid[1])
-    Hb <- str_detect(str_split_fixed(colnames(h), "_", 2)[,1], pid[2])
-    A <- simulate_cross(n.ind = n.ind[i],  h1 = h[Pab,Ha], h2 = h[Pab,Hb], h[Pab,"map"])$offspring
-    id <- apply(A, 1, function(x) length(unique(x)) > 1)
-    dimnames(A) <- list(h[Pab,"mrks"], NULL, paste0("Ind_",paste0(cross.mat[i,],collapse="x"), "_", 1:n.ind[i]))
-    for(j in 1:n.ind[i])
-       R[rownames(A[id,,j]),,j] <- A[id,,j]
-    G[[i]] <- R
+    P1 <- str_detect(colnames(h), cross.mat[i,1])
+    P2 <- str_detect(colnames(h), cross.mat[i,2])
+    cur.mrk.id <- which(apply(h[,P1 | P2], 1, function(x) !any(is.na(x))))
+    cur.cross <- simulate_cross(n.ind = n.ind[i],
+                                h1 = h[cur.mrk.id,P1],
+                                h2 = h[cur.mrk.id,P2],
+                                cm.map = h[cur.mrk.id,"map"])$offspring
+
+    id <- apply(cur.cross, 1, function(x) length(unique(x)) > 1)
+    dimnames(cur.cross) <- list(h[cur.mrk.id,"mrks"], NULL, paste0("Ind_",paste0(cross.mat[i,],collapse="x"), "_", 1:n.ind[i]))
+    cur.ind <- dimnames(cur.cross)[[3]]
+    for(j in cur.ind){
+      G[[j]] <- matrix(NA, nrow = nrow(h), ncol = mean(ploidy.vec[cross.mat[i,]]), dimnames = list(h$mrks, NULL))
+      G[[j]][rownames(cur.cross[id,,j]),] <- cur.cross[id,,j]
+    }
+    P.info[cur.ind,"Par1"] <- cross.mat[i,1]
+    P.info[cur.ind,"Par2"] <- cross.mat[i,2]
+    P.info[cur.ind,"pl1"] <- sum(P1)
+    P.info[cur.ind,"pl2"] <- sum(P2)
   }
-  names(G) <- apply(cross.mat, 1, paste0, collapse = "x")
-  map <- h$map
-  names(map) <- h$mrks
-  ind.names <- unlist(lapply(G, function(x) dimnames(x)[[3]]))
-  ped <- data.frame(Parent1 = str_split_fixed(ind.names, pattern = "_|x", 4)[,2],
-                    Parent2 = str_split_fixed(ind.names, pattern = "_|x", 4)[,3],
-                    row.names = ind.names)
-  idp <- cbind(c(1, (cumsum(ploidy)+1)[-length(ploidy)]), cumsum(ploidy))
-  H <- vector("list", length(ploidy))
-  h1 <- h[,-c(1:2)]
-  for(i in 1:length(H))
-    H[[i]] <- data.frame(h1[,idp[i,1]:idp[i,2]], row.names = h$mrks)
-  names(H) <- paste0("P", 1:length(H))
-  structure(list(dat = G, ploidy = ploidy,
-                 phases = H, pedigree = ped,
+  structure(list(dat = G,
+                 phases = h,
+                 pedigree = P.info,
                  map = map),
             class = "mappoly2.data")
 }
@@ -370,9 +381,9 @@ simulate_multiple_crosses <- function(ploidy,
 #' @importFrom stringr %>%
 #' @export
 print.mappoly2.data <- function(x){
-  y <- table(x$pedigree$Parent1, x$pedigree$Parent2)
+  y <- table(x$pedigree$Par1, x$pedigree$Par2)
   fds <- length(unique(unlist(dimnames(y))))
-  n.mrk <- dim(x$dat[[1]])[[1]]
+  n.mrk <- nrow(x$dat[[1]])
   w <- melt(x$dat)
   w <- w[!is.na(w$value),]
   w <- w %>% group_by(Var1) %>%
