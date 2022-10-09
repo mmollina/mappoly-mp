@@ -368,10 +368,15 @@ simulate_multiple_crosses <- function(ploidy.vec,
     P.info[cur.ind,"pl1"] <- sum(P1)
     P.info[cur.ind,"pl2"] <- sum(P2)
   }
+  unique.par <- unique(as.character(cross.mat))
+  ph <- vector("list", length(unique.par))
+  names(ph) <- unique.par
+  for(i in unique.par)
+    ph[[i]] <- h[,str_detect(colnames(h), i)]
   structure(list(dat = G,
-                 phases = h,
+                 phases = ph,
                  pedigree = P.info,
-                 map = map),
+                 map = h[,2:1]),
             class = "mappoly2.data")
 }
 
