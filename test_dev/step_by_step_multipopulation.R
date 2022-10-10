@@ -1,29 +1,34 @@
 require(mappoly2)
 require(mappoly)
 require(tidyverse)
-ploidy.vec <- c(2, 4, 6) #four parents
-names(ploidy.vec) <- c("P1", "P2", "P3")
-cross.mat <- matrix(c("P1","P2","P1","P3"), ncol = 2, byrow = T)
-n.ind <- c(150, 150) #per cross
-n.mrk <- c(10, 10, 10) #per parent
-alleles <- list(P1 = c(1:2),
-                P2 = c(3:6),
-                P3 = c(7:12))
+ploidy.vec <- c(4, 2, 4, 4) #four parents
+names(ploidy.vec) <- c("P1", "P2", "P3", "P4")
+cross.mat <- matrix(c("P1","P2",
+                      "P1","P3",
+                      "P2","P3",
+                      "P1","P1",
+                      "P2","P4",
+                      "P3","P4"), ncol = 2, byrow = T)
+n.ind <- c(30, 30, 30, 30, 30, 30) #per cross
+n.mrk <- c(100,100,100,100) #per parent
+alleles <- list(P1 = c(1:4),
+                P2 = c(5:6),
+                P3 = c(7:10),
+                P4 = c(11:14))
 map.length <- 10 #in centimorgans
-# ploidy.vec <- c(4, 2) #four parents
-# names(ploidy.vec) <- c("P1", "P2")
-# cross.mat <- matrix(c("P1","P2"), ncol = 2, byrow = T)
-# n.ind <- 300 #per cross
-# n.mrk <- c(10, 10) #per parent
-# alleles <- list(P1 = c(1:4),
-#                 P2 = c(5:6))
-# map.length <- 10 #in centimorgans
-
+sim.cross <- simulate_multiple_crosses(ploidy.vec,
+                                       cross.mat,
+                                       n.ind,
+                                       n.mrk,
+                                       alleles,
+                                       map.length)
+sim.cross
+sim.cross$joint.info
 par(bg = "black")
 plot(NA, xlim = c(0,10), ylim = c(0,10))
 axis(1, col = "white")
 axis(2, col = "white")
-abline(0,1, col = "red")
+abline(0,1, col = "red", lwd = 3)
 for(it in 1:100){
   cat("it: ", it, "\n")
   sim.cross <- simulate_multiple_crosses(ploidy.vec,
@@ -84,7 +89,7 @@ for(it in 1:100){
     }
   }
   #### MAPpoly2 - same C++ code as mappoly####
-  restemp <- hmm_map_reconstruction(ploidy1 = sim.cross$pedigree$pl1,
+  system.time(restemp <- hmm_map_reconstruction(ploidy1 = sim.cross$pedigree$pl1,
                                     ploidy2 = sim.cross$pedigree$pl2,
                                     n.mrk = length(h),
                                     n.ind = length(h[[1]]),
@@ -93,13 +98,12 @@ for(it in 1:100){
                                     rf_vec = rep(0.01, length(h)-1),
                                     verbose = FALSE,
                                     use_H0 = FALSE,
-                                    tol = 1e-3)
+                                    tol = 1e-3))
   x <- round(cumsum(mappoly::imf_h(c(0, restemp[[2]]))), 2)
   y <- round(sim.cross$map$map, 2)
   z <- lm(y~x)
-  points(y~x, cex = .5, pch = 20, col = "lightgray")
+  points(y~x, cex = .5, pch = 20, col = "pink")
   abline(z, col = "yellow", lwd = .5)
-
 }
 
 

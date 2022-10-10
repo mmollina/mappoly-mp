@@ -401,7 +401,7 @@ print.mappoly2.data <- function(x){
     arrange(desc(n))
   cat("This is an object of class mappoly2.data'\n")
   cat("    Number of founders:                     ", fds, "\n")
-  cat("    Ploidy of founders:                     ", x$ploidy, "\n")
+  cat("    Ploidy of founders:                     ", sapply(x$phases, ncol), "\n")
   cat("    No. individuals:                        ", sum(y), "\n")
   cat("    No. markers:                            ", n.mrk, "\n\n")
   cat("Number of individuals per crosses:")
