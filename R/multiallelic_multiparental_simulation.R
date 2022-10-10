@@ -319,8 +319,8 @@ simulate_connected <- function(ploidy,
 #'                                        map.length)
 #' sim.cross
 #' names(sim.cross)
-#' names(sim.cross$dat)
-#' sim.cross$dat[1]
+#' names(sim.cross$offspring)
+#' sim.cross$offspring[1]
 #'
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @importFrom stringr str_detect
@@ -371,12 +371,15 @@ simulate_multiple_crosses <- function(ploidy.vec,
   unique.par <- unique(as.character(cross.mat))
   ph <- vector("list", length(unique.par))
   names(ph) <- unique.par
-  for(i in unique.par)
+  for(i in unique.par){
     ph[[i]] <- h[,str_detect(colnames(h), i)]
-  structure(list(dat = G,
+    rownames(ph[[i]]) <- h$mrks
+  }
+  structure(list(offspring = G,
                  phases = ph,
                  pedigree = P.info,
-                 map = h[,2:1]),
+                 map = h[,2:1],
+                 joint.info  = h),
             class = "mappoly2.data")
 }
 
@@ -388,8 +391,8 @@ simulate_multiple_crosses <- function(ploidy.vec,
 print.mappoly2.data <- function(x){
   y <- table(x$pedigree$Par1, x$pedigree$Par2)
   fds <- length(unique(unlist(dimnames(y))))
-  n.mrk <- nrow(x$dat[[1]])
-  w <- melt(x$dat)
+  n.mrk <- nrow(x$offspring[[1]])
+  w <- melt(x$offspring)
   w <- w[!is.na(w$value),]
   w <- w %>% group_by(Var1) %>%
     summarise(cod = unique(value), .groups = 'drop') %>%
