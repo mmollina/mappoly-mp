@@ -3,7 +3,7 @@ require(mappoly)
 require(tidyverse)
 require(foreach)
 source("test_dev/sim_build_map.R")
-ploidy.vec <- c(4, 2, 4, 2) #four parents
+ploidy.vec <- c(4, 2, 4, 6) #four parents
 names(ploidy.vec) <- c("P1", "P2", "P3", "P4")
 cross.mat <- matrix(c("P1","P2",
                       "P1","P3",
@@ -11,8 +11,8 @@ cross.mat <- matrix(c("P1","P2",
                       "P1","P1",
                       "P2","P4",
                       "P3","P4"), ncol = 2, byrow = T)
-n.mrk <- c(30,30,30,30) #per parent
-map.length <- 10 #in centimorgans
+n.mrk <- c(100,100,100,100) #per parent
+map.length <- 50 #in centimorgans
 
 #### Parallel ####
 n.cores <- parallel::detectCores()
@@ -21,7 +21,7 @@ parallel::clusterEvalQ(cl, require(mappoly2))
 parallel::clusterEvalQ(cl, require(stringr))
 parallel::clusterEvalQ(cl, require(mappoly))
 doParallel::registerDoParallel(cl = cl)
-n.sim <- 500
+n.sim <- 2000
 #### completely informative, 100 ind per cross ####
 system.time({
   alleles <- list(P1 = c(1:4),
@@ -117,6 +117,11 @@ ggplot(DF, aes(x = map, y = est.map, color = sim) ) +
   geom_point(alpha = .2) +
   geom_smooth(method = "lm", se = FALSE, lwd = 2) +
   facet_wrap(.~sim) + geom_abline(intercept = 0, slope = 1, linetype = "dashed")
+
+ggplot(DF, aes(x = map, y = est.map) ) +
+  geom_hex(bins = 50) + scale_fill_distiller(palette = "Spectral") +
+  facet_wrap(.~sim) + geom_abline(intercept = 0, slope = 1, linetype = "dashed")
+
 save.image("test_dev/bias_study_multipop.rda")
 
 
