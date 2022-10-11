@@ -9,7 +9,8 @@ simulate_connected(
   n.mrk,
   alleles,
   map.length,
-  lambda = sapply(alleles, median)
+  lambda = sapply(alleles, median),
+  shuffle.homolog = TRUE
 )
 }
 \arguments{
@@ -20,9 +21,9 @@ Simulate haplotypes in connected populations
 }
 \examples{
 h.c <- simulate_connected(ploidy = c(4,2,6),
-                           n.mrk = c(10, 15, 10),
-                           alleles = list(c(0:3), c(3:4), c(3:6)),
-                           map.length = 10)
+                          n.mrk = c(10, 15, 10),
+                          alleles = list(c(0:3), c(3:4), c(3:6)),
+                          map.length = 10)
 
 }
 \author{

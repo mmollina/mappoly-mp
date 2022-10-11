@@ -5,7 +5,8 @@
 \title{HMM estimation function}
 \usage{
 hmm_map_reconstruction(
-  ploidy,
+  ploidy1,
+  ploidy2,
   n.mrk,
   n.ind,
   haplo,

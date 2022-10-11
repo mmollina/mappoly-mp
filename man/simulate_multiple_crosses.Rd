@@ -6,13 +6,14 @@
 \title{Simulate multiple crosses based}
 \usage{
 simulate_multiple_crosses(
-  ploidy,
+  ploidy.vec,
   cross.mat,
   n.ind,
   n.mrk,
   alleles,
   map.length,
-  lambda = sapply(alleles, median)
+  lambda = sapply(alleles, median),
+  shuffle.homolog = TRUE
 )
 
 \method{print}{mappoly2.data}(x)
@@ -24,20 +25,31 @@ simulate_multiple_crosses(
 Simulate multiple crosses based
 }
 \examples{
-p <- c(4, 2, 6, 4)
-names(p) <- c("P1", "P2", "P3", "P4")
-cm <- matrix(c("P1","P2","P1","P3","P2","P3","P1","P1","P2","P4","P3","P4"), ncol = 2, byrow = T)
-D <- simulate_multiple_crosses(ploidy = p, #four parents
-                               cross.mat = cm,
-                               n.ind = c(60, 60, 60, 60, 60, 60), #per cross
-                               n.mrk= c(100,100,100,100), # per parent
-                               alleles = list(c(0:3), c(4:5), c(6:11), c(12:15)),
-                               map.length = 100)
-D
-names(D)
-names(D$dat)
-D$dat$`1x2`
-dimnames(D$dat$`1x2`)
+ploidy.vec <- c(4, 2, 6, 4) #four parents
+names(ploidy.vec) <- c("P1", "P2", "P3", "P4")
+cross.mat <- matrix(c("P1","P2",
+                      "P1","P3",
+                      "P2","P3",
+                      "P1","P1",
+                      "P2","P4",
+                      "P3","P4"), ncol = 2, byrow = T)
+n.ind <- c(60, 60, 60, 60, 60, 60) #per cross
+n.mrk <- c(20,15,15,25) #per parent
+alleles <- list(P1 = c(1:3),
+                P2 = c(4:5),
+                P3 = c(6:11),
+                P4 = c(12:15))
+map.length <- 10 #in centimorgans
+sim.cross <- simulate_multiple_crosses(ploidy.vec,
+                                       cross.mat,
+                                       n.ind,
+                                       n.mrk,
+                                       alleles,
+                                       map.length)
+sim.cross
+names(sim.cross)
+names(sim.cross$offspring)
+sim.cross$offspring[1]
 
 }
 \author{
