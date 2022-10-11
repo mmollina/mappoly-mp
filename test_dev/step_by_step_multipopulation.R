@@ -122,6 +122,4 @@ ggplot(DF, aes(x = map, y = est.map) ) +
   geom_hex(bins = 50) + scale_fill_distiller(palette = "Spectral") +
   facet_wrap(.~sim) + geom_abline(intercept = 0, slope = 1, linetype = "dashed")
 
-save.image("test_dev/bias_study_multipop.rda")
-
 
