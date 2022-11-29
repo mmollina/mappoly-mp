@@ -72,6 +72,64 @@ mappoly2_to_mappoly <- function(dat){
   return(bipar.pops)
 }
 
+#' mp2 to mp
+#'
+#' @param void internal function to be documented
+#'
+#' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
+#' @export mp2_csv_to_mappoly
+mp2_csv_to_mappoly <- function(dat){
+  ## Removing markers with missing data points for parents
+  dat <- dat[which(!is.na(dat[,2,drop = TRUE]) & !is.na(dat[,3,drop = TRUE])),]
+  ## get number of individuals -------------
+  n.ind <- ncol(dat) - 5
+  ## get number of markers -----------------
+  n.mrk <- nrow(dat)
+  ## get marker names ----------------------
+  mrk.names <- dat[,1,drop = TRUE]
+  ## get individual names ------------------
+  ind.names <- colnames(dat)[-c(1:5)]
+  ## get dosage in parent P ----------------
+  dosage.p1 <- as.integer(dat[,2,drop = TRUE])
+  ## get dosage in parent Q ----------------
+  dosage.p2 <- as.integer(dat[,3,drop = TRUE])
+  ## monomorphic markers
+  dp <- abs(abs(dosage.p1-(ploidy/2))-(ploidy/2))
+  dq <- abs(abs(dosage.p2-(ploidy/2))-(ploidy/2))
+  #id <- dp + dq != 0
+  ## get chromosome info ---------------------
+  chrom <- as.character(dat[,4,drop = TRUE])
+  ## get sequence position info ------------
+  sequencepos <- as.numeric(dat[,5,drop = TRUE])
+  names(sequencepos) <- names(chrom) <- names(dosage.p2) <- names(dosage.p1) <-  mrk.names
+  nphen <- 0
+  phen <- NULL
+  ## get genotypic info --------------------
+  geno.dose <- as.matrix(dat[,-c(1:5), drop = FALSE])
+  dimnames(geno.dose) <- list(mrk.names, ind.names)
+  geno.dose[is.na(geno.dose)] <- ploidy + 1
+  ## returning the 'mappoly.data' object
+  res <- structure(list(ploidy = ploidy,
+                        n.ind = n.ind,
+                        n.mrk = nrow(dat),
+                        ind.names = ind.names,
+                        mrk.names = mrk.names,
+                        dosage.p1 = dosage.p1,
+                        dosage.p2 = dosage.p2,
+                        chrom = chrom,
+                        genome.pos = sequencepos,
+                        seq.ref = NULL,
+                        seq.alt = NULL,
+                        all.mrk.depth = NULL,
+                        prob.thres = NULL,
+                        geno.dose = geno.dose,
+                        nphen = nphen,
+                        phen = phen,
+                        kept = NULL,
+                        elim.correspondence = NULL),
+                   class = "mappoly.data")
+  return(res)
+}
 
 
 

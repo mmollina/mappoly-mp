@@ -1,14 +1,15 @@
 # ## Saving Pedigree
-# load("~/repos/acacia/Pedigree_G.reduced.RData")
+setwd("~/repos/current_work/mappoly2/test_dev/acacia/")
+# load("Pedigree_G.reduced.RData")
 # pedigree <- Pedigree_G.reduced
 # colnames(pedigree) <- c("Ind", "P1", "P2")
 # pedigree$Ind <- paste0("Ind_", pedigree$Ind)
 #
 # saveRDS(pedigree, file = "test_dev/pedigree_acacia.rda")
-# 
+#
 # ## Saving Data
-# load("~/repos/acacia/MAP.non.redundant.Rdata")
-# load("~/repos/acacia/dataHD.non.redundant.Rdata")
+# load("MAP.non.redundant.Rdata")
+# load("dataHD.non.redundant.Rdata")
 # info <- map.non.redundant[,c(1,2,3,4,5)]
 # rownames(info) <- info[,1]
 # dat <- t(dataHD.non.redundant)
@@ -20,16 +21,17 @@
 #                   alt = info[rownames(dat),5],
 #                   dat)
 # colnames(dat) <- str_replace_all(string = colnames(dat), pattern = "X", replacement = "Ind_")
-# saveRDS(dat, file="test_dev/data_acacia.rda")
+# saveRDS(dat, file="data_acacia.rda")
 require(mappoly)
 require(stringr)
 require(ggplot2)
 require(dplyr)
-dat <- readRDS("test_dev/data_acacia.rda")
-pedigree <- readRDS("test_dev/pedigree_acacia.rda")
-
+dat <- readRDS("data_acacia.rda")
+pedigree <- readRDS("pedigree_acacia.rda")
+dat[1:10, 50:60]
+pedigree[25:35,]
 #### Converting to MAPpoly ####
-ploidy <-2
+ploidy <- 2
 ## labeling populations
 pedigree$pop <- apply(pedigree[, 2:3], 1, paste0, collapse="-")
 ## Split into full-sib
@@ -55,7 +57,7 @@ for(i in 1:npop.init){
   if(all(is.na(dt)))
   {
     cat("\n")
-    next()    
+    next()
   }
   dat.fs[[i]] <- tryCatch(table_to_mappoly(dt, ploidy, verbose = FALSE), error = function(e) NA)
   if(!all(is.na(dat.fs[[i]]))){
@@ -65,8 +67,9 @@ for(i in 1:npop.init){
   cat("\n")
 }
 dat.fs <- dat.fs[sapply(dat.fs, function(x) !all(is.na(x)))]
-## Proportion of remaining crosses 
+## Proportion of remaining crosses
 round(100*length(dat.fs)/npop.init, 1)
+saveRDS(dat.fs, file="multiple_fulsib_data_acacia.rda")
 
 #### Plot ####
 rcross <- str_split_fixed(names(dat.fs), "-", 2)
@@ -91,71 +94,15 @@ rcross2 <- rbind(data.frame(P1 = P1$P1,
                            n.mrk = NA), rcross)
 
 ggplot(rcross2,
-       aes(x = str_to_title(P1), 
+       aes(x = str_to_title(P1),
            y = str_to_title(P2),
            color = n.mrk,
            size = n.ind)) +
   geom_point() +
-  geom_text(aes(label = n.ind), 
-            colour = "white", 
+  geom_text(aes(label = n.ind),
+            colour = "white",
             size = 3) +
   scale_x_discrete(position = "top") +
   scale_size_continuous(range = c(5, 15)) + # Adjust as required.
   scale_color_gradientn(colors = c("red", "darkblue"), na.value = "darkgray") +
   labs(x = NULL, y = NULL)
-
-#### Selecting half-sib families ####
-head(pedigree)
-parent <- "AC332"
-id <- which(apply(pedigree, 1, function(x) any(x[2:3] == parent)))
-a <- pedigree[id,]
-dt <- dat[,a[,1], drop = FALSE]
-dt <- t(dt)
-M<-cor(dt)
-dt <- unique(dt)
-
-cat(nrow(dt), "markers /", ncol(dt), "individuals")
-dt <- tryCatch(data.frame(snp_name = rownames(dt),
-                          P1 = dat[rownames(dt), a[1,2], drop = FALSE],
-                          P2 = dat[rownames(dt), a[1,3], drop = FALSE],
-                          ch = dat[rownames(dt), "ch", drop = FALSE],
-                          pos = dat[rownames(dt), "pos", drop = FALSE],
-                          dt), error = function(e) NA)
-if(all(is.na(dt)))
-{
-  cat("\n")
-  next()    
-}
-dat.fs[[i]] <- tryCatch(table_to_mappoly(dt, ploidy, verbose = FALSE), error = function(e) NA)
-if(!all(is.na(dat.fs[[i]]))){
-  dat.fs[[i]]$seq.ref <- dat[rownames(dt), "ref"]
-  dat.fs[[i]]$seq.alt <- dat[rownames(dt), "alt"]
-}
-cat("\n")
-
-
-id <- which(str_detect(names(dat.fs), parent))
-d1 <- dat.fs[[id[1]]]
-s <- make_seq_mappoly(d1, "all")
-tpt <- est_pairwise_rf(s, ncpus = 32)
-tpt$pairwise$`1-2`
-
-
-m <- rf_list_to_matrix(tpt, 2,2,.1)
-plot(m)
-g <- group_mappoly(m, expected.groups = 13, comp.mat = T)
-g
-s1 <- make_seq_mappoly(g, 1)
-tpt1 <- make_pairs_mappoly(tpt, s1)
-map <- est_rf_hmm_sequential(input.seq = s1,
-                             twopt = tpt1,
-                             extend.tail = 20,
-                             sub.map.size.diff.limit = 8)
-map.up <- est_full_hmm_with_global_error(input.map = map,
-                                         error = 0.1,
-                                         verbose = TRUE)
-print(map.up, detailed = T)
-plot(map.up)
-
-
-

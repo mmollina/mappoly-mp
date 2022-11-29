@@ -1,7 +1,6 @@
 #' Generates the states the model should visit including global error rate
 #'
 #' @param void internal function to be documented
-#' @examples
 #'
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @export
