@@ -4,6 +4,7 @@
 
 # Big Data files
 *.RData
+*.Rdata
 *.rda
 *.rds
 *.rdb
