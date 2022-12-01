@@ -19,8 +19,8 @@ dat_SWxBE <- readRDS("~/repos/current_work/rose/data/dat_SWxBE.rds")
 # i1 <- match(i, map_ch1_BExMG$info$mrk.names)[1:200]
 # i2 <- match(i, map_ch1_SWxBE$info$mrk.names)[1:200]
 
-i1<-1:map_ch1_BExMG$info$n.mrk
-i2<-1:map_ch1_SWxBE$info$n.mrk
+i1<-1:500
+i2<-1:500
 
 #map_ch1_BExMG <- readRDS("~/repos/current_work/rose/fullsib_maps/BExMG/map_err_ch_1.rds")
 #map_ch1_SWxBE <- readRDS("~/repos/current_work/rose/fullsib_maps/SWxBE/map_err_ch_1.rds")
