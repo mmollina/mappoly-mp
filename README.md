@@ -174,7 +174,7 @@ compare_single_maps(l)
 ``` r
 require(mappoly2)
 require(mappoly)
-ploidy.vec <- c(4, 2, 6) #four parents
+ploidy.vec <- c(4, 2, 4) #three parents
 names(ploidy.vec) <- c("P1", "P2", "P3")
 cross.mat <- matrix(c("P1","P2",
                       "P3","P1"), 
@@ -192,7 +192,6 @@ sim.cross <- simulate_multiple_crosses(ploidy.vec,
                                        n.mrk,
                                        alleles,
                                        map.length)
-sim.cross$
 states <- states_to_visit(sim.cross)
 restemp <- hmm_map_reconstruction(ploidy1 = states$ploidy$pl1,
                                   ploidy2 = states$ploidy$pl2,
