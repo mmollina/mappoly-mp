@@ -10,9 +10,6 @@
 #'    \donttest{
 #'    map_ch1_BExMG <- readRDS("~/repos/current_work/rose/fullsib_maps/BExMG/map_err_ch_1.rds")
 #'    map_ch1_SWxBE <- readRDS("~/repos/current_work/rose/fullsib_maps/SWxBE/map_err_ch_1.rds")
-#'
-#'
-#'
 #'    map.list <- list(BExMG = map_ch1_BExMG,
 #'                     SWxBE = map_ch1_SWxBE)
 #'    dat_BExMG <- readRDS("~/repos/current_work/rose/data/dat_BExMG.rds")
@@ -30,26 +27,35 @@
 #'                          dimnames = list(c("pop1", "pop2"), c("P1", "P2")))
 #'   }
 #'
-#' @importFrom plotly ggplotly
 #' @export
 prepare_maps_to_merge <- function(map.list,
                                   data.list,
                                   parents.mat){
-  pl <- data.list[[1]]$ploidy
   ## Checking input arguments
   if (any(!sapply(map.list, inherits, "mappoly.map")))
     stop("All elemnts in 'map.list' should be of class 'mappoly.map'")
   if (any(!sapply(data.list, inherits, "mappoly.data")))
     stop("All elemnts in 'data.list' should be of class 'mappoly.data'")
+
   ## Gathering parent's phases
   w <- table(as.vector(parents.mat))
   phases <- vector("list", length(w))
   names(phases) <- names(w)
-  for(i in 1:length(phases)){
-      par.ord <- which(parents.mat == names(phases)[i], arr.ind = T)
-      hom.res <- match_homologs(map.list, par.ord)
+
+  ## Gathering ploidy level
+  pl <- data.list[[1]]$ploidy
+
+  ##A <- NULL
+  ## For each unique parent
+  for(i in names(phases)){
+      par.ord <- which(parents.mat == i, arr.ind = T)
+      hom.res <- match_homologs(map.list, par.ord, pl, my_pal = brewer.pal(9, "Blues")[9:4])
+      ##A <- cbind(A, hom.res$ph)
       phases[[i]] <- apply(hom.res$ph, 1, paste, collapse = "")
   }
+  ##lapply(phases, length)
+  ##dim(A)
+  ##image(A)
   ## Gathering pedigree
   pedigree <- NULL
   for(i in 1:nrow(parents.mat)){
@@ -68,9 +74,20 @@ prepare_maps_to_merge <- function(map.list,
   emit <- states <- vector("list", length(phases[[1]]))
   names(emit) <- names(states) <- names(phases[[1]])
   for(j in names(phases[[1]])){
+    cat(j, "\n")
     Etemp <- Ltemp <- vector("list", nrow(pedigree))
     names(Etemp) <- names(Ltemp) <- rownames(pedigree)
     for(i in rownames(pedigree)){
+      if(!j%in%data.list[[pedigree[i, "pop"]]]$mrk.names){
+        Ltemp[[i]] <- R[[1]][[1]]
+        Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
+        next()
+      }
+      if(!j%in%map.list[[pedigree[i, "pop"]]]$info$mrk.names){
+        Ltemp[[i]] <- R[[1]][[1]]
+        Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
+        next()
+      }
       ##FIXME Split in full-sibs
       id<- paste(phases[[pedigree[i,"Par1"]]][j],
                  phases[[pedigree[i,"Par2"]]][j],
@@ -79,11 +96,18 @@ prepare_maps_to_merge <- function(map.list,
         Ltemp[[i]] <- R[[1]][[1]]
       else{
         x <- data.list[[pedigree[i, "pop"]]]$geno.dose[j,i]
+        if(x%in%names(R[[id]])){
+          Ltemp[[i]] <- R[[1]][[1]]
+          Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
+          next()
+        }
         if(x == pl + 1)
           Ltemp[[i]] <- R[[1]][[1]]
         else
           Ltemp[[i]] <- R[[id]][[as.character(x)]]
       }
+      if(is.null(Ltemp[[i]]))
+        Ltemp[[i]] <- R[[1]][[1]]
       Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
     }
     states[[j]] <- Ltemp
@@ -97,11 +121,14 @@ prepare_maps_to_merge <- function(map.list,
        genome.pos = hom.res)
 }
 
-match_homologs <- function(map.list, par.ord){
-  #### Check order of parents
+#' @importFrom dendextend color_branches color_labels rect.dendrogram
+#' @export
+match_homologs <- function(map.list, par.ord, pl, my_pal=mappoly::mp_pallet2(pl)){
+  ## Number of full-sibs with the analyzed parent
+  n <- nrow(par.ord)
   ## Shared markers
   idn <- Reduce(intersect, lapply(map.list, function(x) x$info$mrk.names))
-  ## Markers from both maps and yheir positions
+  ## Markers from all maps and their positions
   id.all <- unlist(lapply(map.list, function(x) x$info$mrk.names))
   pos.all <- unlist(lapply(map.list, function(x) x$info$genome.pos))
   ## Removing duplicate markers
@@ -109,26 +136,31 @@ match_homologs <- function(map.list, par.ord){
   ## Ordering according genome
   pos <- w[order(w$pos.all),]
   ## Gathering phases
-  ph.list <- ph.mat <- NULL
-  for(i in 1:nrow(par.ord)){
-    pl <- map.list[[par.ord[i,1]]]$info$ploidy
+  ph.list <- vector("list", n)
+  ph.mat <- NULL
+  for(i in 1:n){
     ph <- map.list[[par.ord[i,1]]]$maps[[1]]$seq.ph[[par.ord[i,2]]]
     ph <- ph_list_to_matrix(ph, pl)
     dimnames(ph) <- list(map.list[[par.ord[i,1]]]$info$mrk.names, paste0(letters[1:pl], i))
     ph.list[[i]] <- ph
     ph.mat <- rbind(ph.mat, t(ph[idn,]))
   }
-  if(nrow(par.ord) > 1){
-    dd <- dist(ph.mat, method = "binary")
+  if(n > 1){
+    dd <- as.matrix(dist(ph.mat, method = "binary"))
+    for(i in 1:n){
+      id <- (((i-1)*pl)+1):(pl*i)
+      dd[id,id][] <- 1
+    }
+    #image(dd)
+    dd <- as.dist(dd)
     hc <- hclust(dd, method = "ward.D2")
     d <- as.dendrogram(hc)
-    my_pal <- c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07")
     d <- d %>%
-      dendextend::color_branches(k=4, col = my_pal) %>%
-      dendextend::color_labels(k = 4, col = my_pal)
+      dendextend::color_branches(k = pl, col = my_pal) %>%
+      dendextend::color_labels(k = pl, col = my_pal)
     plot(d)
-    dendextend::rect.dendrogram(d, k = 4, lwd = 3, border = my_pal)
-    homologs  <- cutree(hc, k = 4)
+    dendextend::rect.dendrogram(d, k = pl, lwd = 3, border = my_pal)
+    homologs  <- cutree(hc, k = pl)
     y <- split(names(homologs), as.factor(homologs))
     names(y) <- paste0("h", 1:pl)
     x <- y %>%
@@ -140,19 +172,27 @@ match_homologs <- function(map.list, par.ord){
     ## Re-organizing homologs
     for(i in 1:length(ph.list))
       ph.list[[i]] <- ph.list[[i]][,x[i,]]
-    ##FIXME: Instead of selecting the first one,
-    ## use some probability or threshold
-    id.ph <- logical(length(idn))
-    for(i in 1:length(idn))
-      id.ph[i] <- as.logical(length(unique(unlist(lapply(ph.list, function(x) paste0(x[1, ], collapse = ""))))))
-    ph.out <- ph.list[[1]][idn[id.ph],]
-    for(i in 1:length(ph.list)){
+
+    #id<-Reduce(intersect, sapply(ph.list, rownames))
+    #image(ph.list[[1]][id,])
+    #image(ph.list[[2]][id,])
+    #image(ph.list[[3]][id,])
+
+    ## Check if dose and phase is the same across shared markers
+    S <- sapply(ph.list, function(x) apply(x[idn,], 1, paste0, collapse = ""))
+    id.ph <- which(apply(S, 1, function(x) length(unique(x)) != 1))
+    ph.out <- ph.list[[1]]
+    ph.out[names(id.ph),][] <- NA
+    for(i in 1:n){
       idtemp <- setdiff(rownames(ph.list[[i]]), rownames(ph.out))
       ph.out <- rbind(ph.out, ph.list[[i]][idtemp,])
     }
-    if(length(idn[!id.ph]) > 0)
-      ph.out[idn[!id.ph],][] <- NA
-  } else {
+    remaining <- setdiff(pos$id.all, rownames(ph.out))
+    if(length(remaining) > 0)
+      ph.out <- rbind(ph.out,
+                      matrix(NA, length(remaining), pl, dimnames = list(remaining, colnames(ph.out))))
+  }
+  else {
     ph.out <- ph.list[[1]]
     for(i in 1:length(map.list)){
       idtemp <- setdiff(map.list[[i]]$info$mrk.names, rownames(ph.out))
@@ -169,6 +209,7 @@ match_homologs <- function(map.list, par.ord){
        genome.pos = pos)
 }
 
+#' @export
 generate_biallelic_indices <- function(pl){
   I <- matrix(0, 1, pl)
   for(d in 1:pl){
@@ -202,6 +243,7 @@ generate_biallelic_indices <- function(pl){
   Z
 }
 
+#' @export
 compare_single_maps <- function(map.list){
   mrk.id <- unlist(lapply(map.list, function(x) x$info$mrk.names))
   geno_pos <- unlist(lapply(map.list, function(x) x$info$genome.pos))
@@ -211,12 +253,10 @@ compare_single_maps <- function(map.list){
                          row.names = NULL))
   rg0 <- range(L.temp[,-c(1:2)], na.rm = T)
   L.temp$u.s<-apply(L.temp[,-c(1:2)], 1, function(x) {
-    if(is.na(x[1]))
+    if(any(is.na(x)))
       return(0)
-    else if(is.na(x[2]))
-      return(1)
     else
-      return(2)
+      return(1)
   })
 
   L.temp$colorVal <- as.factor(L.temp$u.s)
@@ -234,14 +274,15 @@ compare_single_maps <- function(map.list){
   figA <- L.temp %>% plot_ly(type = 'parcoords',
                              line = list(color = ~colorVal,
                                          lwd = .2,
-                                         colorscale = list(c(0, "#B2DF8A"),
-                                                           c(0.5, "#FB9A99"),
-                                                           c(1, "#1F78B4"))),
+                                         colorscale = list(c(0, "#E5E4E2"),
+                                                           c(0.5, "#E5E4E2"),
+                                                           c(1, "#ff5733"))),
                              dimensions = dm
   )
   figA
 }
 
+#' @export
 dose_2_vec<- function(d, pl){
   if(is.na(d))
     return(rep(NA, pl))
