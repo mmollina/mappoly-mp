@@ -6,6 +6,8 @@
 #'      to the maps in argument \code{map.list}
 #' @param parents.mat a matrix where each row contains the names of the parents
 #'      corresponding to the maps in argument \code{map.list}
+#' @param err global genotyping error
+#'
 #'@examples
 #'    \donttest{
 #'    map_ch1_BExMG <- readRDS("~/repos/current_work/rose/fullsib_maps/BExMG/map_err_ch_1.rds")
@@ -30,7 +32,8 @@
 #' @export
 prepare_maps_to_merge <- function(map.list,
                                   data.list,
-                                  parents.mat){
+                                  parents.mat,
+                                  err = 0){
   ## Checking input arguments
   if (any(!sapply(map.list, inherits, "mappoly.map")))
     stop("All elemnts in 'map.list' should be of class 'mappoly.map'")
@@ -39,23 +42,18 @@ prepare_maps_to_merge <- function(map.list,
 
   ## Gathering parent's phases
   w <- table(as.vector(parents.mat))
-  phases <- vector("list", length(w))
+  hom.res <- phases <- vector("list", length(w))
   names(phases) <- names(w)
 
   ## Gathering ploidy level
   pl <- data.list[[1]]$ploidy
 
-  ##A <- NULL
   ## For each unique parent
   for(i in names(phases)){
       par.ord <- which(parents.mat == i, arr.ind = T)
-      hom.res <- match_homologs(map.list, par.ord, pl, my_pal = brewer.pal(9, "Blues")[9:4])
-      ##A <- cbind(A, hom.res$ph)
-      phases[[i]] <- apply(hom.res$ph, 1, paste, collapse = "")
+      hom.res[[i]] <- match_homologs(map.list, par.ord, pl)
+      phases[[i]] <- apply(hom.res[[i]]$ph, 1, paste, collapse = "")
   }
-  ##lapply(phases, length)
-  ##dim(A)
-  ##image(A)
   ## Gathering pedigree
   pedigree <- NULL
   for(i in 1:nrow(parents.mat)){
@@ -71,66 +69,157 @@ prepare_maps_to_merge <- function(map.list,
   pedigree <- pedigree[,-1]
   ## Gathering offspring genotypes
   R <- generate_biallelic_indices(pl)
+  E <- R[[2]]
+  R <- R[[1]]
   emit <- states <- vector("list", length(phases[[1]]))
   names(emit) <- names(states) <- names(phases[[1]])
+
+  pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+                       max = length(phases[[1]]), # Maximum value of the progress bar
+                       style = 3,    # Progress bar style (also available style = 1 and style = 2)
+                       width = 50,   # Progress bar width. Defaults to getOption("width")
+                       char = "=")   # Character used to create the bar
+  cte <- 0
   for(j in names(phases[[1]])){
-    cat(j, "\n")
     Etemp <- Ltemp <- vector("list", nrow(pedigree))
     names(Etemp) <- names(Ltemp) <- rownames(pedigree)
     for(i in rownames(pedigree)){
-      if(!j%in%data.list[[pedigree[i, "pop"]]]$mrk.names){
-        Ltemp[[i]] <- R[[1]][[1]]
-        Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
-        next()
-      }
-      if(!j%in%map.list[[pedigree[i, "pop"]]]$info$mrk.names){
-        Ltemp[[i]] <- R[[1]][[1]]
-        Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
-        next()
-      }
-      ##FIXME Split in full-sibs
-      id<- paste(phases[[pedigree[i,"Par1"]]][j],
-                 phases[[pedigree[i,"Par2"]]][j],
-                 sep = "-")
-      if(str_detect(id, "NA"))
-        Ltemp[[i]] <- R[[1]][[1]]
-      else{
-        x <- data.list[[pedigree[i, "pop"]]]$geno.dose[j,i]
-        if(x%in%names(R[[id]])){
+      if(err <= 0.001) {
+        if(!j%in%data.list[[pedigree[i, "pop"]]]$mrk.names){
           Ltemp[[i]] <- R[[1]][[1]]
           Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
           next()
         }
-        if(x == pl + 1)
+        if(!j%in%map.list[[pedigree[i, "pop"]]]$info$mrk.names){
           Ltemp[[i]] <- R[[1]][[1]]
-        else
-          Ltemp[[i]] <- R[[id]][[as.character(x)]]
+          Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
+          next()
+        }
+        ##FIXME Split in full-sibs
+        id<- paste(phases[[pedigree[i,"Par1"]]][j],
+                   phases[[pedigree[i,"Par2"]]][j],
+                   sep = "-")
+        if(str_detect(id, "NA"))
+          Ltemp[[i]] <- R[[1]][[1]]
+        else{
+          x <- data.list[[pedigree[i, "pop"]]]$geno.dose[j,i]
+          if(!x%in%names(R[[id]])){
+            Ltemp[[i]] <- R[[1]][[1]]
+            Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
+            next()
+          }
+          if(x > pl)
+            Ltemp[[i]] <- R[[1]][[1]]
+          else
+            Ltemp[[i]] <- R[[id]][[as.character(x)]]
+        }
+        if(is.null(Ltemp[[i]]))
+          Ltemp[[i]] <- R[[1]][[1]]
+        Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
       }
-      if(is.null(Ltemp[[i]]))
+      else if (err > 0.001) {
         Ltemp[[i]] <- R[[1]][[1]]
-      Etemp[[i]] <- matrix(rep(1, nrow(Ltemp[[i]])), ncol = 1)
+        if(!j%in%data.list[[pedigree[i, "pop"]]]$mrk.names){
+          Etemp[[i]] <- matrix(rep(1/nrow(Ltemp[[i]]),
+                                   nrow(Ltemp[[i]])),
+                               ncol = 1)
+          next()
+        }
+        if(!j%in%map.list[[pedigree[i, "pop"]]]$info$mrk.names){
+          Etemp[[i]] <- matrix(rep(1/nrow(Ltemp[[i]]),
+                                   nrow(Ltemp[[i]])),
+                               ncol = 1)
+          next()
+        }
+        ##FIXME Split in full-sibs
+        id<- paste(phases[[pedigree[i,"Par1"]]][j],
+                   phases[[pedigree[i,"Par2"]]][j],
+                   sep = "-")
+        if(str_detect(id, "NA"))
+          Etemp[[i]] <- matrix(rep(1/nrow(Ltemp[[i]]),
+                                   nrow(Ltemp[[i]])),
+                               ncol = 1)
+        else{
+          x <- data.list[[pedigree[i, "pop"]]]$geno.dose[j,i]
+          if(!x%in%names(R[[id]])){
+            Etemp[[i]] <- matrix(rep(1/nrow(Ltemp[[i]]),
+                                     nrow(Ltemp[[i]])),
+                                 ncol = 1)
+            next()
+          }
+          if(x == pl + 1)
+            Etemp[[i]] <- matrix(rep(1/nrow(Ltemp[[i]]),
+                                     nrow(Ltemp[[i]])),
+                                 ncol = 1)
+          else{
+            v <- E[[id]][[as.character(x)]]
+            A <- matrix(rep(0, nrow(Ltemp[[i]])),
+                                 ncol = 1)
+            A[v,1] <- rep((1-err)/length(v))
+            A[A[,1] == 0,1] <- err/sum(A[,1] == 0)
+            Etemp[[i]] <- A
+          }
+        }
+        if(is.null(Ltemp[[i]])){
+          Etemp[[i]] <- matrix(rep(1/nrow(Ltemp[[i]]),
+                                   nrow(Ltemp[[i]])),
+                               ncol = 1)
+        }
+      } else stop("should not get here!")
     }
     states[[j]] <- Ltemp
     emit[[j]] <- Etemp
+    cte <- cte + 1
+    setTxtProgressBar(pb,  cte)
   }
-  list(n.mrk = length(phases[[1]]),
+  close(pb)
+  structure(list(n.mrk = length(phases[[1]]),
        n.ind = nrow(pedigree),
        states = states,
        emit = emit,
        ploidy = pedigree[,c("pl1", "pl2")],
-       genome.pos = hom.res)
+       merged.phases = hom.res,
+       pedigree = pedigree,
+       err = err), class = "multi.mappoly.consensus.info")
+}
+
+#' @export
+plot.multi.mappoly.consensus.info <- function(w){
+  hc <- sapply(w$merged.phases, function(x) x$hc)
+  hc <-  hc[!sapply(hc, function(x) all(is.na(x)))]
+  u1 <- unique(w$pedigree[,c(1,3)])
+  v1 <- u1[,2]
+  names(v1) <- u1[,1]
+  u2 <- unique(w$pedigree[,c(2,4)])
+  v2 <- u2[,2]
+  names(v2) <- u2[,1]
+  v <- c(v1, v2)
+  a<-sqrt(length(hc))
+  par(mfrow = c(floor(a), ceiling(a)))
+  for(i in 1:length(hc)){
+    d <- as.dendrogram(hc[[i]])
+    d <- d %>%
+      dendextend::color_branches(k = v[names(hc)[1]], col = mp_pallet2(v[names(hc)[1]])) %>%
+      dendextend::color_labels(k = v[names(hc)[1]], col = mp_pallet2(v[names(hc)[1]]))
+    plot(d, main = names(hc)[i])
+    dendextend::rect.dendrogram(d, k = v[names(hc)[1]], lwd = 3,
+                                border = mp_pallet2(v[names(hc)[1]]))
+  }
 }
 
 #' @importFrom dendextend color_branches color_labels rect.dendrogram
+#' @importFrom reshape2 acast
 #' @export
-match_homologs <- function(map.list, par.ord, pl, my_pal=mappoly::mp_pallet2(pl)){
+match_homologs <- function(map.list, par.ord, pl){
   ## Number of full-sibs with the analyzed parent
   n <- nrow(par.ord)
   ## Shared markers
   idn <- Reduce(intersect, lapply(map.list, function(x) x$info$mrk.names))
+
   ## Markers from all maps and their positions
   id.all <- unlist(lapply(map.list, function(x) x$info$mrk.names))
   pos.all <- unlist(lapply(map.list, function(x) x$info$genome.pos))
+
   ## Removing duplicate markers
   w <- unique(data.frame(id.all=id.all, pos.all=pos.all, row.names = NULL))
   ## Ordering according genome
@@ -154,12 +243,6 @@ match_homologs <- function(map.list, par.ord, pl, my_pal=mappoly::mp_pallet2(pl)
     #image(dd)
     dd <- as.dist(dd)
     hc <- hclust(dd, method = "ward.D2")
-    d <- as.dendrogram(hc)
-    d <- d %>%
-      dendextend::color_branches(k = pl, col = my_pal) %>%
-      dendextend::color_labels(k = pl, col = my_pal)
-    plot(d)
-    dendextend::rect.dendrogram(d, k = pl, lwd = 3, border = my_pal)
     homologs  <- cutree(hc, k = pl)
     y <- split(names(homologs), as.factor(homologs))
     names(y) <- paste0("h", 1:pl)
@@ -193,6 +276,7 @@ match_homologs <- function(map.list, par.ord, pl, my_pal=mappoly::mp_pallet2(pl)
                       matrix(NA, length(remaining), pl, dimnames = list(remaining, colnames(ph.out))))
   }
   else {
+    hc <- NA
     ph.out <- ph.list[[1]]
     for(i in 1:length(map.list)){
       idtemp <- setdiff(map.list[[i]]$info$mrk.names, rownames(ph.out))
@@ -204,7 +288,7 @@ match_homologs <- function(map.list, par.ord, pl, my_pal=mappoly::mp_pallet2(pl)
   colnames(pos) <- c("mrk", "geno.pos")
   list(ph = ph.out,
        equivalence = x,
-       dend = d,
+       hc = hc,
        shared.mrks = idn,
        genome.pos = pos)
 }
@@ -220,7 +304,7 @@ generate_biallelic_indices <- function(pl){
     I <- rbind(I, y)
   }
   I <- rbind(I, matrix(1, 1, pl))
-  Z <- vector("list", nrow(I)^2)
+  W <- Z <- vector("list", nrow(I)^2)
   n <- character(nrow(I)^2)
   cte <- 1
   a <- apply(I, 1, paste, collapse="")
@@ -232,18 +316,21 @@ generate_biallelic_indices <- function(pl){
       v2 <- apply(combn(I[j,], pl/2), 2, sum)
       v <- kronecker(v1, v2, "+")
       u <- order(v)
-      u <- split(u, as.factor(sort(v)))
-      for(k in 1:length(u))
+      W[[cte]] <- u <- split(u, as.factor(sort(v)))
+      for(k in 1:length(u)){
         u[[k]] <- A[u[[k]], , drop = FALSE]
+      }
       Z[[cte]] <- u
       cte <- cte + 1
     }
   }
-  names(Z) <- n
-  Z
+  names(W) <- names(Z) <- n
+  list(Z, W)
 }
 
 #' @export
+#' @importFrom mappoly extract_map
+#' @importFrom plotly plot_ly
 compare_single_maps <- function(map.list){
   mrk.id <- unlist(lapply(map.list, function(x) x$info$mrk.names))
   geno_pos <- unlist(lapply(map.list, function(x) x$info$genome.pos))
@@ -252,13 +339,8 @@ compare_single_maps <- function(map.list){
                          sapply(map.list, function(x, i) extract_map(x)[i], i = mrk.id),
                          row.names = NULL))
   rg0 <- range(L.temp[,-c(1:2)], na.rm = T)
-  L.temp$u.s<-apply(L.temp[,-c(1:2)], 1, function(x) {
-    if(any(is.na(x)))
-      return(0)
-    else
-      return(1)
-  })
-
+  L.temp$u.s <- apply(L.temp[,-c(1:2)], 1, function(x) sum(!is.na(x)))
+  L.temp$u.s <- round(L.temp$u.s/max(L.temp$u.s),2)
   L.temp$colorVal <- as.factor(L.temp$u.s)
   levels(L.temp$colorVal) <- 1:length(levels(L.temp$colorVal))
 
@@ -273,12 +355,11 @@ compare_single_maps <- function(map.list){
   }
   figA <- L.temp %>% plot_ly(type = 'parcoords',
                              line = list(color = ~colorVal,
-                                         lwd = .2,
-                                         colorscale = list(c(0, "#E5E4E2"),
-                                                           c(0.5, "#E5E4E2"),
-                                                           c(1, "#ff5733"))),
-                             dimensions = dm
-  )
+                                         colorscale = 'YlGnBu',
+                                         showscale = TRUE), #all
+                             dimensions = dm) %>%
+    layout(plot_bgcolor='rgb(211, 211, 211)') %>%
+    layout(paper_bgcolor='rgb(211, 211, 211)')
   figA
 }
 
@@ -294,4 +375,6 @@ dose_2_vec<- function(d, pl){
   x[1:d] <- 1
   return(x)
 }
+
+
 

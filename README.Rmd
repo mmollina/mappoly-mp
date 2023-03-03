@@ -9,88 +9,128 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 
 ## Background
 
-MAPpoly 2.0 is an under development package to build genetic maps in diploids 
+MAPpoly 2.0 is an under-development package to build genetic maps in diploids 
 and polyploid interconnected populations. Some of the MAPpoly 2.0 features:
 
   - Mutli-population
   - Multi-allelic (from biallelic to complete informative markers)
-  - Multi-ploidy (2, 4, 6 and any combination of those)
+  - Multi-ploidy (2, 4, 6, and any combination of those)
 
 ## What we have so far
 
-The core function to re-estimate a genetic map in any of the situations listed 
-above is already [implemented](https://github.com/mmollina/mappoly2/blob/main/src/est_hmm_map.cpp). However, there is a lot of functions that need to be implemented before we could release the package to the general public. In the next sections, I will present some functionality that are implemented in the current version.
+The core C++ function to re-estimate a genetic map and compute the haplotype probabilities in any of the above situations is [implemented](https://github.com/mmollina/mappoly2/blob/main/src/est_hmm_map.cpp). However, several functions must be implemented before releasing the package to the general public. In the next sections, I will present some functionality implemented in the current version.
 
-### Merging maps from MAPpoly
+## TODOs
+ - Update functions to allow self fertilization
+ - Use log on the HMM to avoid underflow computations 
 
-```{r merging maps}
+## Merging maps from MAPpoly in a rose population
+
+In this section, we will build a consensus map of chromosome 1 using two 
+tetraploid mapping populations: Brite Eyes x My Girl (BExMG) and Stormy Weather x Brite Eyes (SWxBE). 
+First, let us load the pre-constructed maps in MAPpoly's format:
+
+```{r load_fs}
 require(mappoly2)
 require(mappoly)
-require(tidyverse)
-require(reshape2)
-require(plotly)
 map_ch1_BExMG <- readRDS("~/repos/current_work/rose/fullsib_maps/BExMG/map_err_ch_1.rds")
 map_ch1_SWxBE <- readRDS("~/repos/current_work/rose/fullsib_maps/SWxBE/map_err_ch_1.rds")
-
-a <- get_submap(map_ch1_BExMG, mrk.pos = 1:200)
-
-  
 dat_BExMG <- readRDS("~/repos/current_work/rose/data/dat_BExMG.rds")
 dat_SWxBE <- readRDS("~/repos/current_work/rose/data/dat_SWxBE.rds")
-data.list <- list(BExMG = dat_BExMG,
-                  SWxBE = dat_SWxBE)
-map.list <- list(BExMG = map_ch1_BExMG,
+map.list <- list(BExMG = map_ch1_BExMG, 
                  SWxBE = map_ch1_SWxBE)
-parents.mat <- matrix(c("BE", "MG", "SW", "BE"),
-                      2, 2, byrow = TRUE,
+plot_map_list_consensus(map.list, col = c(2,4))
+```
+
+Formatting data to MAPpoly2
+```{r format}
+data.list <- list(BExMG = dat_BExMG, 
+                  SWxBE = dat_SWxBE)
+parents.mat <- matrix(c("Brite_Eyes","My_Girl",
+                        "Stormy_Weather","Brite_Eyes"), 
+                      ncol = 2,
+                      byrow = TRUE, 
                       dimnames = list(c("pop1", "pop2"), c("P1", "P2")))
-
-states <- prepare_maps_to_merge(map.list, data.list, parents.mat)
-restemp <- hmm_map_reconstruction(ploidy1 = states$ploidy$pl1,
-                                  ploidy2 = states$ploidy$pl2,
-                                  n.mrk = states$n.mrk,
-                                  n.ind = states$n.ind,
-                                  haplo = states$states,
-                                  emit = states$emit,
-                                  rf_vec = rep(0.01, states$n.mrk-1),
-                                  verbose = FALSE,
-                                  use_H0 = FALSE,
-                                  tol = 1e-3)
-dummy.map <- map_ch1_BExMG
-dummy.map$maps[[1]]$seq.rf <- restemp[[2]]
-dummy.map$info$mrk.names <- states$genome.pos$genome.pos$mrk
-dummy.map$info$genome.pos <- states$genome.pos$genome.pos$geno.pos
-
-l <- list(BExMG = map_ch1_BExMG,
-        SWxBE = map_ch1_SWxBE,
-        SWxBExMG = dummy.map)
 ```
 
-
-```{r}
-plot_map_list(l, col = c(mp_pal(3)))
+Preparing data and assessing correspondence among homologous chromosomes (holomogs). 
+```{r homologous}
+w <- prepare_maps_to_merge(map.list = map.list,
+                           data.list = data.list, 
+                           parents.mat = parents.mat, 
+                           err = 0)
 ```
 
-```{r, eval=FALSE}
-compare_single_maps(l)
+Correspondence among homologous chromosomes in different crosses. In this case,
+Brite Eyes is present in two crosses. Homolog C in cross 1 (BExMG) corresponds 
+to homolog D in cross 2 (SWxBE). Yet, D corresponds to A, A corresponds to C and 
+B corresponds to B. 
+
+```{r plot_prepared}
+plot(w)
+```
+
+Map reconstruction (without error - need to fix underflow computations)
+```{r building}
+consensus.map <- hmm_map_reconstruction(w, tol = 10e-4, verbose = FALSE)
+```
+
+Notice that the map is still longer than expected because we still need to 
+include the genotype errors in the algorithm 
+```{r plot_map}
+plot_map_list_consensus(map.list, consensus.map, col = mp_pallet2(3))
+```
+
+Computing homolog probabilities
+```{r genoprob}
+multi_fam_genoprob <- calc_genoprob_mutli_fam(consensus.map, step = 1)
+```
+
+Probability profiles
+```{r plot_genoprob}
+g <- multi_fam_genoprob$genoprob
+Z1<- g %>% filter(ind == "X16400_N047")
+head(Z1)
+ggplot2::ggplot(Z1, ggplot2::aes(x = pos, y = prob, fill = homolog, color = homolog)) + 
+  ggplot2::geom_density(stat = "identity", alpha = 0.7, position = "stack") + 
+  ggplot2::facet_grid(rows = ggplot2::vars(homolog))
 ```
 
 ## Simulations
 
+### Multiallelic simulation (given phase of funders)
+
+Let us simulate four parents:
+
+ - P1 tetraploid, 50 markers with alleles 0,1,2,3
+ - P2 diploid, 50 markers with alleles 2,3,4,5
+ - P3 hexaploid, 50 markers with alleles 0,1,2,3,4,5
+ - P4 tetraploid, 50 markers with alleles 0,2,6,8
+ 
+ crossed as follows:
+
+ - P1 x P2: 100 individuals
+ - P3 x P1: 100 individuals
+ - P4 x P2: 100 individuals
+ - P3 x P4: 100 individuals
+
+map length: 50 cM
+
 ```{r simulations}
-require(mappoly2)
-require(mappoly)
-ploidy.vec <- c(4, 2, 4) #three parents
-names(ploidy.vec) <- c("P1", "P2", "P3")
+ploidy.vec <- c(4, 2, 6, 4) #three parents
+names(ploidy.vec) <- c("P1", "P2", "P3", "P4")
 cross.mat <- matrix(c("P1","P2",
-                      "P3","P1"), 
+                      "P3","P1",
+                      "P4","P2",
+                      "P3","P4"), 
                     ncol = 2, byrow = T)
-n.mrk <- c(50,50,50) #per parent
+n.mrk <- c(50,50,50,50) #per parent
 map.length <- 50 #in centimorgans
 alleles <- list(P1 = c(0:3),
                 P2 = c(2:5),
-                P3 = c(0:5))
-n.ind <- c(100, 100) #per cross
+                P3 = c(0:5),
+                P4 = c(0,2,6,8))
+n.ind <- c(100, 100, 100, 100) #per cross
 
 sim.cross <- simulate_multiple_crosses(ploidy.vec,
                                        cross.mat,
@@ -98,16 +138,108 @@ sim.cross <- simulate_multiple_crosses(ploidy.vec,
                                        n.mrk,
                                        alleles,
                                        map.length)
-states <- states_to_visit(sim.cross)
-restemp <- hmm_map_reconstruction(ploidy1 = states$ploidy$pl1,
-                                  ploidy2 = states$ploidy$pl2,
-                                  n.mrk = states$n.mrk,
-                                  n.ind = states$n.ind,
-                                  haplo = states$states,
-                                  emit = states$emit,
-                                  rf_vec = rep(0.01, states$n.mrk-1),
-                                  verbose = FALSE,
-                                  use_H0 = FALSE,
-                                  tol = 1e-4)
-plot(cumsum(imf_h(restemp[[2]])))
+sim.cross
 ```
+
+```{r}
+w <- states_to_visit(sim.cross)
+```
+
+```{r}
+map <- hmm_map_reconstruction(w, tol = 10e-4, verbose = FALSE)
+```
+
+```{r plot_map_2}
+plot_map_list_consensus(map.list = NULL, map)
+```
+
+## Simulating biallelic maps, phasing with MAPpoly and merging with MAPPoly2  
+
+
+Simulating four tetraploid parents with 100 biallelic markers each crossed as follows:
+
+ - P1 x P2: 100 individuals
+ - P1 x P3: 100 individuals
+ - P2 x P3: 100 individuals
+ - P2 x P4: 100 individuals
+ - P3 x P4: 100 individuals
+ 
+map length: 50 cM
+```{r simulating_biallelic}
+ploidy.vec <- c(4, 4, 4, 4) #four parents
+names(ploidy.vec) <- c("P1", "P2", "P3", "P4")
+parents.mat <- matrix(c("P1","P2",
+                        "P1","P3",
+                        "P2","P3",
+                        "P2","P4",
+                        "P3","P4"), ncol = 2, byrow = T)
+n.mrk <- c(100,100,100,100) #per parent
+map.length <- 50 #in centimorgans
+alleles <- list(P1 = c(0:1),
+                P2 = c(0:1),
+                P3 = c(0:1),
+                P4 = c(0:1))
+n.ind <- c(100, 100, 100, 100, 100)
+sim.cross <- simulate_multiple_crosses(ploidy.vec,
+                                       parents.mat,
+                                       n.ind,
+                                       n.mrk,
+                                       alleles,
+                                       map.length)
+sim.cross
+```
+
+Converting data to MAPpoly
+```{r converting mp2-mp}
+data.list <- mappoly2_to_mappoly(dat = sim.cross)
+```
+
+Building full-sib maps
+```{r build_fs}
+map.list <- vector("list", length(data.list))
+names(map.list) <- names(data.list)
+for(i in 1:length(data.list)){
+  dat <- data.list[[i]]
+  plot(dat)
+  s <- make_seq_mappoly(dat, "all")
+  tpt <- est_pairwise_rf(s)
+  map.list[[i]] <- est_rf_hmm_sequential(s, tpt)
+}
+plot_map_list(map.list, col = mp_pallet2(5))
+```
+
+Preparing data and assessing correspondence among homologous chromosomes (holomogs). 
+```{r homologous2}
+w <- prepare_maps_to_merge(map.list = map.list,
+                           data.list = data.list,
+                           parents.mat = parents.mat,
+                           err = 0)
+```
+
+Correspondence among homologous chromosomes in different crosses.
+```{r plot_prepared2}
+plot(w)
+```
+
+```{r building2}
+consensus.map <- hmm_map_reconstruction(w, tol = 10e-4, verbose = FALSE)
+```
+
+```{r plot_map2}
+plot_map_list_consensus(map.list, consensus.map, col = mp_pallet2(6))
+```
+
+```{r genoprob2}
+multi_fam_genoprob <- calc_genoprob_mutli_fam(consensus.map, step = 1)
+```
+
+```{r plot_genoprob2}
+g <- multi_fam_genoprob$genoprob
+Z1<- g %>% filter(ind == unique(g$ind)[1])
+head(Z1)
+ggplot2::ggplot(Z1, ggplot2::aes(x = pos, y = prob, fill = homolog, color = homolog)) +
+  ggplot2::geom_density(stat = "identity", alpha = 0.7, position = "stack") +
+  ggplot2::facet_grid(rows = ggplot2::vars(homolog))
+```
+
+

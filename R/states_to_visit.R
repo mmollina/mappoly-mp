@@ -4,7 +4,6 @@
 #'
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @export
-#'
 states_to_visit <- function(input.data){
   ####States to visit####
   pd <- input.data$pedigree
@@ -24,6 +23,15 @@ states_to_visit <- function(input.data){
     names(h[[i]]) <- ind.names
   }
   emit <- h
+
+
+  pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+                       max = length(unique.cross.id) * length(mrk.names), # Maximum value of the progress bar
+                       style = 3,    # Progress bar style (also available style = 1 and style = 2)
+                       width = 50,   # Progress bar width. Defaults to getOption("width")
+                       char = "=")   # Character used to create the bar
+  cte <- 0
+
   for(k in unique.cross.id){
     ngam1 <- choose(upd$pl1[k], upd$pl1[k]/2)
     ngam2 <- choose(upd$pl2[k], upd$pl2[k]/2)
@@ -58,10 +66,18 @@ states_to_visit <- function(input.data){
         }
       }
     }
+    cte <- cte + 1
+    setTxtProgressBar(pb,  cte)
   }
-  ploidy <-input.data$pedigree[, c("pl1", "pl2")]
-  list( n.mrk = length(h), n.ind = length(h[[1]]), states = h,
-        emit = emit, ploidy = ploidy)
+  close(pb)
+  structure(list(n.mrk = length(h),
+                 n.ind = length(h[[1]]),
+                 states =  h,
+                 emit = emit,
+                 ploidy = input.data$pedigree[,c("pl1", "pl2")],
+                 merged.phases = NA,
+                 pedigree = input.data$pedigree,
+                 err = NA), class = "multi.mappoly.consensus.info")
 }
 
 #' Generates the states the model should visit for mappoly legacy

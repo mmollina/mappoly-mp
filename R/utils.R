@@ -43,31 +43,56 @@ my_pal <- c(darkslategray = "#2f4f4f",
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @export
 mappoly2_to_mappoly <- function(dat){
-  bipar.pops <- vector("list", length(dat$dat))
-  names(bipar.pops) <- names(dat$dat)
+  pop.table <- table(dat$pedigree[,1:2])
+  pop.id <- as.logical(pop.table)
+  pop.names <- apply(Reduce(expand.grid, dimnames(pop.table)), 1, paste0, collapse = "x")
+  bipar.pops <- vector("list", sum(pop.id))
+  names(bipar.pops) <- pop.names[pop.id]
+  geno.dose <- sapply(dat$offspring, function(x) apply(x, 1, sum))
   for(i in 1:length(bipar.pops)){
-    P1 <- strsplit(names(dat$dat[i]), "x")[[1]][1]
-    P2 <- strsplit(names(dat$dat[i]), "x")[[1]][2]
-    geno.dose <- apply(dat$dat[[i]], c(1,3), sum)
-    geno.dose[is.na(geno.dose)] <- dat$ploidy + 1
+    P1 <- strsplit(names(bipar.pops), "x")[[i]][1]
+    P2 <- strsplit(names(bipar.pops), "x")[[i]][2]
+    pl.ind <- apply(dat$pedigree[dat$pedigree[,1] == P1 & dat$pedigree[,2] == P2,3:4], 1, sum)/2
+    pl <- unique(pl.ind)
+    if(length(pl) > 1) stop("MAPpoly does no support mixed ploidies")
+    geno.dose[is.na(geno.dose)] <- pl  + 1
     dosage.p1 <- apply(dat$phases[[P1]], 1, sum)
     dosage.p2 <- apply(dat$phases[[P2]], 1, sum)
     id.mrk.names <- names(which(!is.na(dosage.p1 + dosage.p2)))
-    bipar.pops[[i]] <- structure(list(ploidy = dat$ploidy[P1],
-                                      n.ind = dim(dat$dat[[i]])[3],
-                                      n.mrk = length(id.mrk.names),
-                                      ind.names = dimnames(dat$dat[[i]])[[3]],
-                                      mrk.names = id.mrk.names,
-                                      dosage.p1 = dosage.p1[id.mrk.names],
-                                      dosage.p2 = dosage.p2[id.mrk.names],
-                                      chrom = rep(1, length(id.mrk.names)),
-                                      genome.pos = dat$map[id.mrk.names],
-                                      prob.thres = NULL,
-                                      geno.dose = geno.dose[id.mrk.names,],
-                                      nphen = 0,
-                                      phen = NULL,
-                                      chisq.pval = NULL),
-                                 class = "mappoly.data")
+    chrom <- rep(1, length(id.mrk.names))
+    pos <- dat$map[dat$map$mrks%in%id.mrk.names,2]
+    names(chrom) <- names(pos) <- id.mrk.names
+    id.mrk.names <- id.mrk.names[!(dosage.p1[id.mrk.names] == 0 & dosage.p2[id.mrk.names] == 0 |
+                                   dosage.p1[id.mrk.names] == pl & dosage.p2[id.mrk.names] == pl |
+                                     dosage.p1[id.mrk.names] == pl & dosage.p2[id.mrk.names] == 0 |
+                                     dosage.p1[id.mrk.names] == 0 & dosage.p2[id.mrk.names] == pl)]
+    res <- structure(list(ploidy = pl,
+                          n.ind = length(pl.ind),
+                          n.mrk = length(id.mrk.names),
+                          ind.names = names(pl.ind),
+                          mrk.names = id.mrk.names,
+                          dosage.p1 = dosage.p1[id.mrk.names],
+                          dosage.p2 = dosage.p2[id.mrk.names],
+                          chrom = chrom,
+                          genome.pos = pos,
+                          prob.thres = NULL,
+                          geno.dose = geno.dose[id.mrk.names,names(pl.ind)],
+                          nphen = 0,
+                          phen = NULL,
+                          chisq.pval = NULL),
+                     class = "mappoly.data")
+    res <- filter_non_conforming_classes(res)
+    ##Computing chi-square p.values
+    Ds <- array(NA, dim = c(pl+1, pl+1, pl+1))
+    for(k in 0:pl)
+      for(j in 0:pl)
+        Ds[k+1,j+1,] <- segreg_poly(pl = pl, dP = k, dQ = j)
+    Dpop <- cbind(res$dosage.p1, res$dosage.p2)
+    M <- t(apply(Dpop, 1, function(x) Ds[x[1]+1, x[2]+1,]))
+    dimnames(M) <- list(res$mrk.names, c(0:pl))
+    M <- cbind(M, res$geno.dose)
+    res$chisq.pval <- apply(M, 1, mrk_chisq_test, ploidy = pl)
+    bipar.pops[[i]] <- res
   }
   return(bipar.pops)
 }
@@ -131,5 +156,102 @@ mp2_csv_to_mappoly <- function(dat){
   return(res)
 }
 
+#' @export
+get_full_sibs <- function(pedigree){
+  pedigree <- pedigree[!apply(pedigree[,2:3], 1, function(x) any(is.na(x))), ]
+  pedigree <- cbind(pedigree, Pop = apply(pedigree[, 2:3], 1, paste0, collapse = "-"))
+  lapply(split(pedigree, pedigree$Pop),
+         function(x){
+           list(P1 = x[1,2],
+                P2 = x[1,3],
+                Ind  = x[,1])
+         })
+}
+
+#' @export
+create_map_multi_fam <- function(input.map, step = 0)
+{
+  map <- c(0, cumsum(imf_h(input.map$rf)))
+  names(map) <- names(input.map$states)
+  if(round(step, 1)  ==  0)
+    return(map)
+  minloc <- min(map)
+  map <- map-minloc
+  a <- seq(floor(min(map)), max(map), by = step)
+  a <- a[is.na(match(a,map))]
+  names(a) <- paste("loc",a,sep = "_")
+  return(sort(c(a,map))+minloc)
+}
 
 
+
+#' Chi-square test
+#'
+#' @param void internal function to be documented
+#' @keywords internal
+mrk_chisq_test <- function(x, ploidy){
+  y <- x[-c(1:(ploidy+1))]
+  y[y == ploidy+1] <- NA
+  y <- table(y, useNA = "always")
+  names(y) <- c(names(y)[-length(y)], "NA")
+  seg.exp <- x[0:(ploidy+1)]
+  seg.exp <- seg.exp[seg.exp != 0]
+  seg.obs <- seg.exp
+  seg.obs[names(y)[-length(y)]] <- y[-length(y)]
+  pval <- suppressWarnings(stats::chisq.test(x = seg.obs, p = seg.exp[names(seg.obs)])$p.value)
+  pval
+}
+
+
+#' @export
+#' @importFrom mappoly extract_map
+plot_map_list_consensus <- function(map.list=NULL, consensus.map = NULL, col = "lightgray"){
+  if(is.null(consensus.map))
+  {
+    if(length(col) == 1) col = rep(col, length(map.list))
+    m <- vector("list", length(map.list))
+    for(i in 1:length(map.list))
+      m[[i]] <- extract_map(map.list[[i]])
+    names(m) <- c(names(map.list))
+    plot(0, ylim = c(0,length(m)+1), xlim = c(0,max(sapply(m, max))),
+         type = "n",
+         axes = FALSE,
+         ylab = "", xlab = "Distance (cM)")
+    axis(1)
+    for(i in 1:length(m))
+      mappoly:::plot_one_map(m[[i]], i, horiz = T, col = col[i])
+    axis(2, at = 1:length(m), labels = names(m),
+         lwd = 0, las = 2)
+  }
+  else if(is.null(map.list)){
+    m <- vector("list", 1)
+    m[[1]] <- cumsum(imf_h(c(0, consensus.map$rf)))
+    names(m) <- c("cons")
+    plot(0, ylim = c(0,length(m)+1), xlim = c(0,max(sapply(m, max))),
+         type = "n",
+         axes = FALSE,
+         ylab = "", xlab = "Distance (cM)")
+    axis(1)
+    for(i in 1:length(m))
+      mappoly:::plot_one_map(m[[i]], i, horiz = T, col = col[i])
+    axis(2, at = 1:length(m), labels = names(m),
+         lwd = 0, las = 2)
+  }
+  else{
+    if(length(col) == 1) col = rep(col, length(map.list) + 1)
+    m <- vector("list", length(map.list) + 1)
+    m[[1]] <- cumsum(imf_h(c(0, consensus.map$rf)))
+    for(i in 1:length(map.list))
+      m[[i+1]] <- extract_map(map.list[[i]])
+    names(m) <- c("cons", names(map.list))
+    plot(0, ylim = c(0,length(m)+1), xlim = c(0,max(sapply(m, max))),
+         type = "n",
+         axes = FALSE,
+         ylab = "", xlab = "Distance (cM)")
+    axis(1)
+    for(i in 1:length(m))
+      mappoly:::plot_one_map(m[[i]], i, horiz = T, col = col[i])
+    axis(2, at = 1:length(m), labels = names(m),
+         lwd = 0, las = 2)
+  }
+}

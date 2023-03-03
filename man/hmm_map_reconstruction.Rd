@@ -4,18 +4,7 @@
 \alias{hmm_map_reconstruction}
 \title{HMM estimation function}
 \usage{
-hmm_map_reconstruction(
-  ploidy1,
-  ploidy2,
-  n.mrk,
-  n.ind,
-  haplo,
-  emit = NULL,
-  rf_vec,
-  verbose = TRUE,
-  use_H0 = FALSE,
-  tol = 0.001
-)
+hmm_map_reconstruction(input.obj, verbose = TRUE, use_H0 = FALSE, tol = 0.001)
 }
 \arguments{
 \item{void}{internal function to be documented}

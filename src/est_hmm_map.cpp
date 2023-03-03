@@ -53,7 +53,6 @@ using namespace Rcpp;
 
 RcppExport SEXP est_hmm_map(SEXP ploidy1_idR,
                             SEXP ploidy2_idR,
-                            SEXP max_ploidy_idR,
                             SEXP n_marR,
                             SEXP n_indR,
                             SEXP haploR,
@@ -66,7 +65,6 @@ RcppExport SEXP est_hmm_map(SEXP ploidy1_idR,
   //convert input to C++ types
   Rcpp::NumericVector p1(ploidy1_idR);
   Rcpp::NumericVector p2(ploidy2_idR);
-  int max_ploidy_id = Rcpp::as<int>(max_ploidy_idR);
   int n_mar = Rcpp::as<int>(n_marR);
   int n_ind = Rcpp::as<int>(n_indR);
   Rcpp::List haplo(haploR);
@@ -79,6 +77,13 @@ RcppExport SEXP est_hmm_map(SEXP ploidy1_idR,
   //Initializing some variables
   int k, k1,  maxit = 1000, flag=0;
   double s, loglike=0.0, nr=0.0, temp=0.0;
+  int mpi1 = max(p1);
+  int mpi2 = max(p2);
+  int max_ploidy_id;
+  if(mpi1 >= mpi2)
+    max_ploidy_id = mpi1;
+  else
+    max_ploidy_id = mpi2;
   std::vector<double> rf_cur(rf.size());
   std::vector<double> term(n_ind);
   std::fill(term.begin(), term.end(), 0.0);
@@ -156,13 +161,23 @@ RcppExport SEXP est_hmm_map(SEXP ploidy1_idR,
       for(k=1,k1=n_mar-2; k < n_mar; k++, k1--)
       {
         std::vector<double> temp4 (v[k][ind].size()/2);
-        temp4 = forward_emit(alpha[ind][k-1], v[k-1][ind], v[k][ind], e[k][ind], T[p1[ind]][k-1], T[p2[ind]][k-1]);
+        temp4 = forward_emit(alpha[ind][k-1],
+                             v[k-1][ind],
+                             v[k][ind],
+                             e[k][ind],
+                             T[p1[ind]][k-1],
+                             T[p2[ind]][k-1]);
         for(int j=0; (unsigned)j < temp4.size(); j++)
         {
           alpha[ind][k][j]=temp4[j];
         }
         std::vector<double> temp5 (v[k1][ind].size()/2);
-        temp5=backward_emit(beta[ind][k1+1], v[k1][ind], v[k1+1][ind], e[k1+1][ind], T[p1[ind]][k1], T[p2[ind]][k1]);
+        temp5=backward_emit(beta[ind][k1+1],
+                            v[k1][ind],
+                            v[k1+1][ind],
+                            e[k1+1][ind],
+                            T[p1[ind]][k1],
+                            T[p2[ind]][k1]);
         for(int j=0; (unsigned)j < temp5.size(); j++)
         {
           beta[ind][k1][j]=temp5[j];

@@ -324,6 +324,7 @@ simulate_connected <- function(ploidy,
 #'
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @importFrom stringr str_detect
+#' @importFrom dplyr reframe
 #' @export
 simulate_multiple_crosses <- function(ploidy.vec,
                                       cross.mat,
@@ -395,7 +396,7 @@ print.mappoly2.data <- function(x){
   w <- melt(x$offspring)
   w <- w[!is.na(w$value),]
   w <- w %>% group_by(Var1) %>%
-    summarise(cod = unique(value), .groups = 'drop') %>%
+    reframe(cod = unique(value), .groups = 'drop') %>%
     group_by(Var1) %>%
     summarise(n = n(), .groups = 'drop') %>%
     arrange(desc(n))

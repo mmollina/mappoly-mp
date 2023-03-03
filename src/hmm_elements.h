@@ -35,14 +35,18 @@
  North Carolina State University
  Contact: mmollin@ncsu.edu
  First version:       2022
- Last update: Oct 06, 2022
+ Last update: Feb 21, 2023
  */
 
 double prob_k1_given_k_l_m(int ploidy, int l, double rf);
 
+double log_prob_k1_given_k_l_m(int ploidy, int l, double rf);
+
 std::vector<std::vector<double> > rec_num(int ploidy);
 
 std::vector<std::vector<double> > transition(int ploidy, double rf);
+
+std::vector<std::vector<double> > log_transition(int ploidy, double rf);
 
 std::vector<double> forward_emit(std::vector<double>& fk,
                                  std::vector<int>& ik,
@@ -51,9 +55,39 @@ std::vector<double> forward_emit(std::vector<double>& fk,
                                  std::vector<std::vector<double> >& T1,
                                  std::vector<std::vector<double> >& T2);
 
+std::vector<long double> forward_emit_highprec(std::vector<long double>& fk,
+                                               std::vector<int>& ik,
+                                               std::vector<int>& ik1,
+                                               std::vector<double>& emit,
+                                               std::vector<std::vector<double> >& T1,
+                                               std::vector<std::vector<double> >& T2);
+
+std::vector<double> log_forward_emit(std::vector<double>& fk,
+                                     std::vector<int>& ik,
+                                     std::vector<int>& ik1,
+                                     std::vector<double>& emit,
+                                     std::vector<std::vector<double> >& T1,
+                                     std::vector<std::vector<double> >& T2);
+
 std::vector<double> backward_emit(std::vector<double>& fk1,
                                   std::vector<int>& ik,
                                   std::vector<int>& ik1,
                                   std::vector<double>& emit,
                                   std::vector<std::vector<double> >& T1,
                                   std::vector<std::vector<double> >& T2);
+
+std::vector<long double> backward_emit_highprec(std::vector<long double>& fk1,
+                                                std::vector<int>& ik,
+                                                std::vector<int>& ik1,
+                                                std::vector<double>& emit,
+                                                std::vector<std::vector<double> >& T1,
+                                                std::vector<std::vector<double> >& T2);
+
+std::vector<double> log_backward_emit(std::vector<double>& fk1,
+                                      std::vector<int>& ik,
+                                      std::vector<int>& ik1,
+                                      std::vector<double>& emit,
+                                      std::vector<std::vector<double> >& T1,
+                                      std::vector<std::vector<double> >& T2);
+
+double addlog(double a, double b);
