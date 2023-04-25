@@ -28,8 +28,7 @@ functionality implemented in the current version.
 ## Merging maps from MAPpoly in a rose population
 
 In this section, we will build a consensus map of chromosome 1 using two
-tetraploid mapping populations: Brite Eyes x My Girl (BExMG) and Stormy
-Weather x Brite Eyes (SWxBE). First, let us load the pre-constructed
+tetraploid mapping populations: BExMG SWxBE. First, let us load the pre-constructed
 maps in MAPpoly’s format:
 
 ``` r
