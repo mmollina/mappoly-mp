@@ -1,4 +1,4 @@
-require(mappoly2)
+require(mappolymp)
 require(mappoly)
 require(tidyverse)
 ploidy <- ploidy1 <- 4
@@ -159,7 +159,7 @@ restemp <- hmm_map_reconstruction(ploidy = ploidy,
 mp2 <- round(cumsum(mappoly::imf_h(c(0, restemp[[2]]))), 2)
 #### Comparing 2####
 Y2 <- rbind(cm.map[info.mrk],mp,mp.hap,mp.hap.e, mp2)
-rownames(Y2) <- c("simulation", "mappoly", "mappoly.haplotype", "mappoly.perturbed.emssion", "mappoly2")
+rownames(Y2) <- c("simulation", "mappoly", "mappoly.haplotype", "mappoly.perturbed.emssion", "mappolymp")
 Y2
 ##############Multiallelism################
 ploidy1 <- 4
@@ -266,7 +266,7 @@ mp.multiallelic <- round(cumsum(mappoly::imf_h(c(0, restemp[[2]]))), 2)
 
 
 #### Firts bias assessment ####
-require(mappoly2)
+require(mappolymp)
 require(mappoly)
 require(tidyverse)
 require(foreach)
@@ -281,7 +281,7 @@ names(cm.map) <- paste0("M", 1:n.mrk)
 #### Parallel ####
 n.cores <- parallel::detectCores()
 cl <- parallel::makeCluster(n.cores)
-parallel::clusterEvalQ(cl, require(mappoly2))
+parallel::clusterEvalQ(cl, require(mappolymp))
 parallel::clusterEvalQ(cl, require(stringr))
 parallel::clusterEvalQ(cl, require(mappoly))
 doParallel::registerDoParallel(cl = cl)

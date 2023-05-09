@@ -381,7 +381,7 @@ simulate_multiple_crosses <- function(ploidy.vec,
                  pedigree = P.info,
                  map = h[,2:1],
                  joint.info  = h),
-            class = "mappoly2.data")
+            class = "mappolymp.data")
 }
 
 #' @rdname simulate_multiple_crosses
@@ -389,7 +389,7 @@ simulate_multiple_crosses <- function(ploidy.vec,
 #' @importFrom dplyr group_by summarise filter arrange n
 #' @importFrom stringr %>%
 #' @export
-print.mappoly2.data <- function(x){
+print.mappolymp.data <- function(x){
   y <- table(x$pedigree$Par1, x$pedigree$Par2)
   fds <- length(unique(unlist(dimnames(y))))
   n.mrk <- nrow(x$offspring[[1]])
@@ -400,7 +400,7 @@ print.mappoly2.data <- function(x){
     group_by(Var1) %>%
     summarise(n = n(), .groups = 'drop') %>%
     arrange(desc(n))
-  cat("This is an object of class mappoly2.data'\n")
+  cat("This is an object of class mappolymp.data'\n")
   cat("    Number of founders:                     ", fds, "\n")
   cat("    Ploidy of founders:                     ", sapply(x$phases, ncol), "\n")
   cat("    No. individuals:                        ", sum(y), "\n")

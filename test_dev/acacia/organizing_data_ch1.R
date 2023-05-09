@@ -1,5 +1,5 @@
 # ## Saving Pedigree
-setwd("~/repos/current_work/mappoly2/test_dev/acacia/")
+setwd("~/repos/current_work/mappolymp/test_dev/acacia/")
 # load("Pedigree_G.reduced.RData")
 # pedigree <- Pedigree_G.reduced
 # colnames(pedigree) <- c("Ind", "P1", "P2")

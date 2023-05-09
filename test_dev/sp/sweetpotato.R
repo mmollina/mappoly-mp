@@ -1,9 +1,9 @@
 require(mappoly)
-require(mappoly2)
+require(mappolymp)
 require(tidyverse)
 require(reshape2)
 require(plotly)
-source("~/repos/current_work/mappoly2/R/merge_mappoly_maps.R", echo=TRUE)
+source("~/repos/current_work/mappolymp/R/merge_mappoly_maps.R", echo=TRUE)
 
 load("~/repos/my_repos/Beauregard_Tanzania_NewKawogo/BT_TB_NKB_map/full_sib_maps/data_by_ch/BT_ch1.rda")
 load("~/repos/my_repos/Beauregard_Tanzania_NewKawogo/BT_TB_NKB_map/full_sib_maps/data_by_ch/BT_data_ch1.rda")

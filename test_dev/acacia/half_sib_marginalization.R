@@ -1,6 +1,6 @@
 require(mappoly)
 require(tidyverse)
-setwd("~/repos/current_work/mappoly2/test_dev/acacia/")
+setwd("~/repos/current_work/mappolymp/test_dev/acacia/")
 dat <- readRDS("data_acacia.rda")
 pedigree <- readRDS("pedigree_acacia.rda")
 dat.fs <- readRDS(file="multiple_fulsib_data_acacia.rda")
@@ -64,7 +64,7 @@ dat.hs.mp <- dat.hs.mp[sapply(dat.hs.mp, function(x) !all(is.na(x)))]
 ## Proportion of remaining crosses
 round(100*length(dat.hs.mp)/npop.init, 1)
 saveRDS(dat.hs.mp, file=paste0("half_sibs_", parent,"_data_acacia.rda"))
-dat.hs.mp <- readRDS("~/repos/current_work/mappoly2/test_dev/acacia/half_sibs_AC332_data_acacia.rds")
+dat.hs.mp <- readRDS("~/repos/current_work/mappolymp/test_dev/acacia/half_sibs_AC332_data_acacia.rds")
 
 
 

@@ -67,6 +67,6 @@ for(i in 1:nrow(parents.mat)){
   map.list[[i]] <- map
 }
 save(data.list, map.list, parents.mat,
-     file = "~/repos/current_work/mappoly2/test_dev/simulation/data_and_maps.rda")
+     file = "~/repos/current_work/mappolymp/test_dev/simulation/data_and_maps.rda")
 plot_map_list(map.list, col = mp_pallet1(5))
 compare_single_maps(map.list)

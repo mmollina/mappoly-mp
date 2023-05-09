@@ -1,6 +1,6 @@
 require(mappoly)
 require(tidyverse)
-setwd("~/repos/current_work/mappoly2/test_dev/acacia/")
+setwd("~/repos/current_work/mappolymp/test_dev/acacia/")
 dat <- readRDS("data_acacia.rda")
 pedigree <- readRDS("pedigree_acacia.rda")
 dat.fs.ch1 <- readRDS(file="multiple_fulsib_data_acacia_ch1.rds")
@@ -105,7 +105,7 @@ for(i1 in 1:9){
                               pedigree = pd,
                               map = NA,
                               joint.info  = NA),
-                         class = "mappoly2.data")
+                         class = "mappolymp.data")
    states <- states_to_visit(dat.cur)
    #save.image("test.Rdata")
    restemp <- hmm_map_reconstruction(ploidy1 = states$ploidy$pl1,

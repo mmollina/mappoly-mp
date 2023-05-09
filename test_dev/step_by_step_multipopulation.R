@@ -1,4 +1,4 @@
-require(mappoly2)
+require(mappolymp)
 require(mappoly)
 require(tidyverse)
 require(foreach)
@@ -17,7 +17,7 @@ map.length <- 50 #in centimorgans
 #### Parallel ####
 n.cores <- parallel::detectCores()
 cl <- parallel::makeCluster(n.cores)
-parallel::clusterEvalQ(cl, require(mappoly2))
+parallel::clusterEvalQ(cl, require(mappolymp))
 parallel::clusterEvalQ(cl, require(stringr))
 parallel::clusterEvalQ(cl, require(mappoly))
 doParallel::registerDoParallel(cl = cl)

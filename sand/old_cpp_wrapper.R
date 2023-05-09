@@ -54,7 +54,7 @@
 #                     as.double(states.hmm$hmm.info$emit),
 #                     tol = tol,
 #                     verbose = verbose,
-#                     PACKAGE = "mappoly2")
+#                     PACKAGE = "mappolymp")
 #   res.temp
 # }
 

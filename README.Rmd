@@ -18,7 +18,7 @@ and polyploid interconnected populations. Some of the MAPpoly 2.0 features:
 
 ## What we have so far
 
-The core C++ function to re-estimate a genetic map and compute the haplotype probabilities in any of the above situations is [implemented](https://github.com/mmollina/mappoly2/blob/main/src/est_hmm_map.cpp). However, several functions must be implemented before releasing the package to the general public. In the next sections, I will present some functionality implemented in the current version.
+The core C++ function to re-estimate a genetic map and compute the haplotype probabilities in any of the above situations is [implemented](https://github.com/mmollina/mappolymp/blob/main/src/est_hmm_map.cpp). However, several functions must be implemented before releasing the package to the general public. In the next sections, I will present some functionality implemented in the current version.
 
 ## TODOs
  - Update functions to allow self fertilization
@@ -31,7 +31,7 @@ tetraploid mapping populations: Brite Eyes x My Girl (BExMG) and Stormy Weather 
 First, let us load the pre-constructed maps in MAPpoly's format:
 
 ```{r load_fs}
-require(mappoly2)
+require(mappolymp)
 require(mappoly)
 map_ch1_BExMG <- readRDS("~/repos/current_work/rose/fullsib_maps/BExMG/map_err_ch_1.rds")
 map_ch1_SWxBE <- readRDS("~/repos/current_work/rose/fullsib_maps/SWxBE/map_err_ch_1.rds")
@@ -191,7 +191,7 @@ sim.cross
 
 Converting data to MAPpoly
 ```{r converting mp2-mp}
-data.list <- mappoly2_to_mappoly(dat = sim.cross)
+data.list <- mappolymp_to_mappoly(dat = sim.cross)
 ```
 
 Building full-sib maps

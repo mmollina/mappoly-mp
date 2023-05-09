@@ -1,5 +1,5 @@
 ############## Multiallelism + Multiploidy ################
-require(mappoly2)
+require(mappolymp)
 require(mappoly)
 require(tidyverse)
 ploidy1 <- 6

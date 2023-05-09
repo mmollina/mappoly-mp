@@ -1,4 +1,4 @@
-require(mappoly2)
+require(mappolymp)
 require(onemap)
 
 my_func<-function(D){

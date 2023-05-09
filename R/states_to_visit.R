@@ -119,7 +119,7 @@ states_to_visit <- function(input.data){
 #' x1 <- est_map_R(states.hmm,tol = 1e-3, verbose = FALSE)
 #' mp2 <- round(cumsum(mappoly::imf_h(c(0, x1[[2]]))), 2)
 #' Y1 <- rbind(sim.map,mp,mp2)
-#' rownames(Y1) <- c("simulation", "mappoly", "mappoly2")
+#' rownames(Y1) <- c("simulation", "mappoly", "mappolymp")
 #' Y1
 #'
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}

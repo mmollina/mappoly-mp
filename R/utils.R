@@ -20,7 +20,7 @@ my_pal <- c(darkslategray = "#2f4f4f",
             moccasin = "#ffe4b5",
             hotpink = "#ff69b4")
 
-#' Convert biallelic, single ploidy mappoly2 data into mappoly legacy data
+#' Convert biallelic, single ploidy mappolymp data into mappoly legacy data
 #'
 #' @param void internal function to be documented
 #' @examples
@@ -35,14 +35,14 @@ my_pal <- c(darkslategray = "#2f4f4f",
 #'                                alleles = list(c(0:1), c(0:1), c(0:1), c(0:1)),
 #'                                map.length = 100)
 #' D
-#' bipar.dat <- mappoly2_to_mappoly(D)
+#' bipar.dat <- mappolymp_to_mappoly(D)
 #' require(mappoly)
 #' plot(bipar.dat[[1]])
 #'
 #'
 #' @author Marcelo Mollinari, \email{mmollin@ncsu.edu}
 #' @export
-mappoly2_to_mappoly <- function(dat){
+mappolymp_to_mappoly <- function(dat){
   pop.table <- table(dat$pedigree[,1:2])
   pop.id <- as.logical(pop.table)
   pop.names <- apply(Reduce(expand.grid, dimnames(pop.table)), 1, paste0, collapse = "x")

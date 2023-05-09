@@ -1,4 +1,4 @@
-Package: mappoly2
+Package: mappolymp
 Type: Package
 Title: Genetic mapping in interconnected families with mixed ploidy levels and multiallelic information
 Version: 0.0.2

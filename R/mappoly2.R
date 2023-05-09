@@ -1,4 +1,4 @@
-#' mappoly2: Genetic mapping in interconnected families with mixed ploidy levels and multiallelic information
+#' mappolymp: Genetic mapping in interconnected families with mixed ploidy levels and multiallelic information
 #'
 #' Genetic mapping in interconnected families with mixed ploidy levels and multiallelic information
 #'
@@ -6,7 +6,7 @@
 #' The mypackage functions ...
 #'
 #' @docType package
-#' @name mappoly2
-#' @useDynLib mappoly2
+#' @name mappolymp
+#' @useDynLib mappolymp
 NULL
 #> NULL

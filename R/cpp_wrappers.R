@@ -27,7 +27,7 @@ hmm_map_reconstruction <- function(input.obj,
           verbose,
           tol,
           use_H0,
-          PACKAGE = "mappoly2")
+          PACKAGE = "mappolymp")
   structure(list(n.mrk = input.obj$n.mrk,
                  n.ind = input.obj$n.ind,
                  rf = res.temp[[2]],
@@ -58,7 +58,7 @@ calc_genoprob_mutli_fam <- function(consensus.map,
             consensus.map$emit,
             consensus.map$rf,
             verbose,
-            PACKAGE = "mappoly2")
+            PACKAGE = "mappolymp")
     prob.out <- as.data.frame(x)
     colnames(prob.out) <- c("ind", "snp", "par", "hom", "prob")
     pos <- cumsum(mappoly::imf_h(c(0, consensus.map$rf)))
@@ -102,7 +102,7 @@ calc_genoprob_mutli_fam <- function(consensus.map,
             Em,
             mf_h(diff(map)),
             verbose,
-            PACKAGE = "mappoly2")
+            PACKAGE = "mappolymp")
     prob.out <- as.data.frame(x)
     colnames(prob.out) <- c("ind", "snp", "par", "hom", "prob")
     prob.out$ind <- names(St[[1]])[prob.out$ind]

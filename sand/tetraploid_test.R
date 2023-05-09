@@ -1,11 +1,11 @@
-require(mappoly2)
+require(mappolymp)
 require(mappoly)
 require(tidyverse)
 p <- c(4,4)
 n.ind <- 200
 n.mrk <- 3
 map.length <- 5
-#### Simulating data using mappoly2 ####
+#### Simulating data using mappolymp ####
 names(p) <- c("P1", "P2")
 cm <- matrix(c("P1","P2"),
              ncol = 2, byrow = T)
@@ -31,7 +31,7 @@ image(t(D$phases$P2), axes = F, xlab = "homologs", ylab = "markers", main = "P2"
 plot(x = D$map, y = rep(1, n.mrk),  xlim = c(0, map.length), pch = 15, col = 2)
 abline(h = 1)
 #### Converting and analyzing data using mappoly ####
-bipar.dat <- mappoly2_to_mappoly(D)
+bipar.dat <- mappolymp_to_mappoly(D)
 #plot(bipar.dat[[1]])
 dat <- bipar.dat[[1]]
 s <- make_seq_mappoly(dat, "all")
@@ -40,14 +40,14 @@ map <- est_rf_hmm_sequential(s,tpt, tol.final = 10e-5)
 print(map, detailed = TRUE)
 mp <- round(cumsum(mappoly::imf_h(c(0, map$maps[[1]]$seq.rf))),2)
 
-#### Using mappoly2 ####
+#### Using mappolymp ####
 states.hmm <- states_to_visit(input.data = D, err = 0.0, is.log = TRUE)
 hist(states.hmm$hmm.info$emit)
 x1 <- est_map_R(states.hmm,tol = 10e-5, verbose = F)
 mp2 <- round(cumsum(mappoly::imf_h(c(0, x1[[2]]))), 2)
 #### Comparing 1 ####
 Y1 <- rbind(D$map,mp,mp2)
-rownames(Y1) <- c("simulation", "mappoly", "mappoly2")
+rownames(Y1) <- c("simulation", "mappoly", "mappolymp")
 Y1
 
 #### Using mappoly's 'est_haplo_hmm' ####
@@ -79,7 +79,7 @@ restemp <- mappoly:::est_haplo_hmm(ploidy = p[1],
 mp.hap <- round(cumsum(mappoly::imf_h(c(0, restemp[[2]]))), 2)
 #### Comparing 2####
 Y2 <- rbind(D$ma,mp,mp.hap,mp2)
-rownames(Y2) <- c("simulation", "mappoly", "mappoly.haplotype", "mappoly2")
+rownames(Y2) <- c("simulation", "mappoly", "mappoly.haplotype", "mappolymp")
 Y2
 
 

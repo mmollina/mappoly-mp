@@ -15,7 +15,7 @@ diploids and polyploid interconnected populations. Some of the MAPpoly
 
 The core C++ function to re-estimate a genetic map and compute the
 haplotype probabilities in any of the above situations is
-[implemented](https://github.com/mmollina/mappoly2/blob/main/src/est_hmm_map.cpp).
+[implemented](https://github.com/mmollina/mappolymp/blob/main/src/est_hmm_map.cpp).
 However, several functions must be implemented before releasing the
 package to the general public. In the next sections, I will present some
 functionality implemented in the current version.
@@ -32,7 +32,7 @@ tetraploid mapping populations: BExMG SWxBE. First, let us load the pre-construc
 maps in MAPpoly’s format:
 
 ``` r
-require(mappoly2)
+require(mappolymp)
 require(mappoly)
 map_ch1_BExMG <- readRDS("~/repos/current_work/rose/fullsib_maps/BExMG/map_err_ch_1.rds")
 map_ch1_SWxBE <- readRDS("~/repos/current_work/rose/fullsib_maps/SWxBE/map_err_ch_1.rds")
@@ -170,7 +170,7 @@ sim.cross <- simulate_multiple_crosses(ploidy.vec,
 sim.cross
 ```
 
-    ## This is an object of class mappoly2.data'
+    ## This is an object of class mappolymp.data'
     ##     Number of founders:                      4 
     ##     Ploidy of founders:                      4 6 4 2 
     ##     No. individuals:                         400 
@@ -239,7 +239,7 @@ sim.cross <- simulate_multiple_crosses(ploidy.vec,
 sim.cross
 ```
 
-    ## This is an object of class mappoly2.data'
+    ## This is an object of class mappolymp.data'
     ##     Number of founders:                      4 
     ##     Ploidy of founders:                      4 4 4 4 
     ##     No. individuals:                         500 
@@ -258,7 +258,7 @@ sim.cross
 Converting data to MAPpoly
 
 ``` r
-data.list <- mappoly2_to_mappoly(dat = sim.cross)
+data.list <- mappolymp_to_mappoly(dat = sim.cross)
 ```
 
 Building full-sib maps

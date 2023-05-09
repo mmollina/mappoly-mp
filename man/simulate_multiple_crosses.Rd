@@ -2,7 +2,7 @@
 % Please edit documentation in R/multiallelic_multiparental_simulation.R
 \name{simulate_multiple_crosses}
 \alias{simulate_multiple_crosses}
-\alias{print.mappoly2.data}
+\alias{print.mappolymp.data}
 \title{Simulate multiple crosses based}
 \usage{
 simulate_multiple_crosses(
@@ -16,7 +16,7 @@ simulate_multiple_crosses(
   shuffle.homolog = TRUE
 )
 
-\method{print}{mappoly2.data}(x)
+\method{print}{mappolymp.data}(x)
 }
 \arguments{
 \item{void}{internal function to be documented}
