@@ -166,34 +166,34 @@ est_haplo_hmm <-
       }
     }
     if(highprec){
-      res.temp <-
-        .Call("est_haplotype_map_highprec",
-              m,
-              n.mrk,
-              n.ind,
-              haplo,
-              emit,
-              rf_vec,
-              verbose,
-              tol,
-              use_H0,
-              PACKAGE = "mappoly")
-      return(res.temp)
+     # res.temp <-
+    #    .Call("est_haplotype_map_highprec",
+    #          m,
+    ##          n.mrk,
+    #          n.ind,
+    #          haplo,
+    #          emit,
+    ##          rf_vec,
+    #          verbose,
+    #          tol,
+    #          use_H0,
+    #          PACKAGE = "mappoly")
+    #  return(res.temp)
 
     } else {
-      res.temp <-
-        .Call("est_haplotype_map",
-              m,
-              n.mrk,
-              n.ind,
-              haplo,
-              emit,
-              rf_vec,
-              verbose,
-              tol,
-              use_H0,
-              PACKAGE = "mappoly")
-      return(res.temp)
+      #res.temp <-
+      #  .Call("est_haplotype_map",
+      #        m,
+      #        n.mrk,
+      #        n.ind,
+      ##        haplo,
+      #        emit,
+      #        rf_vec,
+      #        verbose,
+      #        tol,
+      #        use_H0,
+      #        PACKAGE = "mappolymp")
+      #return(res.temp)
     }
   }
 
