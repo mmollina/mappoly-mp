@@ -10,25 +10,39 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// myfunc
-List myfunc(DataFrame ped_mat, DataFrame ind_pop, IntegerMatrix geno);
-RcppExport SEXP _mappolymp_myfunc(SEXP ped_matSEXP, SEXP ind_popSEXP, SEXP genoSEXP) {
+// vs_multiallelic_Rcpp
+List vs_multiallelic_Rcpp(List PH, List GENO, NumericMatrix pedigree);
+RcppExport SEXP _mappolymp_vs_multiallelic_Rcpp(SEXP PHSEXP, SEXP GENOSEXP, SEXP pedigreeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< DataFrame >::type ped_mat(ped_matSEXP);
-    Rcpp::traits::input_parameter< DataFrame >::type ind_pop(ind_popSEXP);
-    Rcpp::traits::input_parameter< IntegerMatrix >::type geno(genoSEXP);
-    rcpp_result_gen = Rcpp::wrap(myfunc(ped_mat, ind_pop, geno));
+    Rcpp::traits::input_parameter< List >::type PH(PHSEXP);
+    Rcpp::traits::input_parameter< List >::type GENO(GENOSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type pedigree(pedigreeSEXP);
+    rcpp_result_gen = Rcpp::wrap(vs_multiallelic_Rcpp(PH, GENO, pedigree));
+    return rcpp_result_gen;
+END_RCPP
+}
+// vs_biallelic_Rcpp
+List vs_biallelic_Rcpp(List PH, IntegerMatrix G, NumericMatrix pedigree);
+RcppExport SEXP _mappolymp_vs_biallelic_Rcpp(SEXP PHSEXP, SEXP GSEXP, SEXP pedigreeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type PH(PHSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type G(GSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type pedigree(pedigreeSEXP);
+    rcpp_result_gen = Rcpp::wrap(vs_biallelic_Rcpp(PH, G, pedigree));
     return rcpp_result_gen;
 END_RCPP
 }
 
-RcppExport SEXP calc_genoprob_multi_fam(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP est_hmm_map(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP calc_genoprob_multi_fam(void *, void *, void *, void *, void *, void *, void *, void *);
+RcppExport SEXP est_hmm_map(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_mappolymp_myfunc", (DL_FUNC) &_mappolymp_myfunc, 3},
+    {"_mappolymp_vs_multiallelic_Rcpp", (DL_FUNC) &_mappolymp_vs_multiallelic_Rcpp, 3},
+    {"_mappolymp_vs_biallelic_Rcpp", (DL_FUNC) &_mappolymp_vs_biallelic_Rcpp, 3},
     {"calc_genoprob_multi_fam", (DL_FUNC) &calc_genoprob_multi_fam,  8},
     {"est_hmm_map",             (DL_FUNC) &est_hmm_map,             10},
     {NULL, NULL, 0}

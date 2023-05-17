@@ -357,9 +357,9 @@ compare_single_maps <- function(map.list){
                              line = list(color = ~colorVal,
                                          colorscale = 'YlGnBu',
                                          showscale = TRUE), #all
-                             dimensions = dm) %>%
-    layout(plot_bgcolor='rgb(211, 211, 211)') %>%
-    layout(paper_bgcolor='rgb(211, 211, 211)')
+                             dimensions = dm)# %>%
+   # layout(plot_bgcolor='rgb(211, 211, 211)') %>%
+   # layout(paper_bgcolor='rgb(211, 211, 211)')
   figA
 }
 

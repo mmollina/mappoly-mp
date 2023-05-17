@@ -9,7 +9,7 @@ hmm_map_reconstruction <- function(input.obj,
                                    tol = 10e-4) {
 
   ## Checking capabilities
-  if (verbose && !capabilities("long.double") && highprec){
+  if (verbose && !capabilities("long.double")){
     cat("This function uses high precision calculations, but your system's architecture doesn't support long double allocation ('capabilities('long.double') = FALSE'). Running in low precision mode.\n")
     highprec = FALSE
   }

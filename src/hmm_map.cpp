@@ -1,8 +1,8 @@
 /*
- MAPpoly: a package to construct genetic maps in autopolyploids
- Copyright (C) 2014-2022 Marcelo Mollinari
+ MAPpoly-2.0: a package to construct genetic maps in autopolyploids
+ Copyright (C) 2014-2023 Marcelo Mollinari
 
- This file is part of MAPpoly.
+ This file is part of MAPpoly-2.0.
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
