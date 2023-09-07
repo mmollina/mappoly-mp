@@ -3,9 +3,9 @@ MAPpoly-MP
 
 ## Background
 
-MAPpoly 2.0 is an under-development package to build genetic maps in
-diploids and polyploid interconnected populations. Some of the MAPpoly
-2.0 features:
+MAPpoly-MP is an under-development package to build genetic maps in
+diploids and polyploid interconnected populations. Some of the MAPpoly-MP 
+features:
 
 - Mutli-population
 - Multi-allelic (from biallelic to complete informative markers)
