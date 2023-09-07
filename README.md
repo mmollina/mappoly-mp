@@ -1,4 +1,4 @@
-MAPpoly 2.0
+MAPpoly-MP
 ================
 
 ## Background
