@@ -15,14 +15,14 @@ features:
 
 The core C++ function to re-estimate a genetic map and compute the
 haplotype probabilities in any of the above situations is
-[implemented](https://github.com/mmollina/mappolymp/blob/main/src/est_hmm_map.cpp).
+[implemented](https://github.com/mmollina/mappoly-mp/blob/main/src/hmm_map.cpp).
 However, several functions must be implemented before releasing the
 package to the general public. In the next sections, I will present some
 functionality implemented in the current version.
 
 ## TODOs
 
-- Update functions to allow self fertilization
+- Update functions to allow self-fertilization
 - Use log on the HMM to avoid underflow computations
 
 ## Merging maps from MAPpoly in a rose population
